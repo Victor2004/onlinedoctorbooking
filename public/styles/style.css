@@ -1,0 +1,118 @@
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  font-family: Arial, Helvetica, system-ui;
+  font-size: 14px;
+  line-height: 16px;
+  font-weight: 400;
+  font-style: normal;
+  color: #333;
+  line-height: 1.6;
+
+  background-color: white;
+}
+
+.main-content {
+  position: relative;
+  z-index: 1;
+  /* background-color: #ffffffd9; */
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 0;
+  border-bottom: 1px solid rgb(221, 221, 221);
+  margin: 0 auto;
+}
+
+.logo-img {
+  height: 60px;
+  width: auto;
+  transition: transform 0.3s ease;
+}
+
+.logo:hover {
+  transform: scale(1.05);
+}
+
+.title {
+  text-align: center;
+}
+
+.list-doctors {
+  box-sizing: border-box;
+  margin-top: 0px;
+  padding-top: 0px;
+  padding-bottom: 1332px;
+}
+
+.doctor {
+  max-width: 1066px;
+  display: flex;
+}
+
+.doctor-card {
+  display: flex;
+  flex: 1 1 0%;
+}
+
+.avatar {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  display: block;
+
+  border: 1px solid rgb(210, 209, 209);
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgb(255, 255, 255);
+}
+
+.doctor-info {
+  margin-bottom: 16px;
+  display: flex;
+  align-items: flex-start;
+  flex: 1 1 0%;
+
+  display: block;
+  margin: -8px;
+  padding: 8px;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: background-color 0.1s linear;
+}
+
+.padding-line {
+  border-bottom: 1px solid rgb(210, 209, 209);
+  padding: 24px 0px;
+  margin: 0px auto;
+}
+
+.doctor-name {
+  font-weight: bold;
+  font-size: 18px;
+  line-height: 20px;
+  color: rgb(0, 0, 0);
+  margin: 0px;
+}
+
+.specialty {
+  font-style: normal;
+  font-weight: normal;
+  font-size: 14px;
+  line-height: 18px;
+  color: rgb(0, 0, 0);
+  margin: 0px;
+}
