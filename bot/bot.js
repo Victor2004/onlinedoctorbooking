@@ -103,7 +103,7 @@ module.exports = (botData) => {
   // Обработка команды /profile
   bot.command("profile", async (ctx) => {
     const user = ctx.from;
-    const userData = botData.users.get(user.id);
+    // const userData = botData.users.get(user.id);
 
     const profileMessage = `
 👤 Ваш профиль:
@@ -112,10 +112,7 @@ module.exports = (botData) => {
 👤 Имя: ${user.first_name}
 📝 Фамилия: ${user.last_name || "Не указана"}
 🔗 Username: @${user.username || "Не указан"}
-📅 Первый визит: ${
-      userData ? new Date(userData.firstSeen).toLocaleString() : "Только что"
-    }
-    `;
+`;
 
     await ctx.reply(profileMessage);
   });
@@ -148,7 +145,16 @@ module.exports = (botData) => {
 
   bot.hears("👤 Профиль", async (ctx) => {
     const user = ctx.from;
-    await ctx.reply(`👤 Ваш профиль:\nID: ${user.id}\nИмя: ${user.first_name}`);
+    const profileMessage = `
+👤 Ваш профиль:
+
+🆔 ID: ${user.id}
+👤 Имя: ${user.first_name}
+📝 Фамилия: ${user.last_name || "Не указана"}
+🔗 Username: @${user.username || "Не указан"}
+`;
+
+    await ctx.reply(profileMessage);
   });
 
   bot.hears("🌐 Сайт", async (ctx) => {
