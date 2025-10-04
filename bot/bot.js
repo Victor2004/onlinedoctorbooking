@@ -25,18 +25,48 @@ module.exports = (botData) => {
     }
   };
 
+  // Функция для отправки сообщения конкретному пользователю по его id
+  async function sendMessageToUser(userId, message, options = {}) {
+    try {
+      const messageOptions = {
+        parse_mode: options.parse_mode || "HTML",
+        ...options,
+      };
+
+      await bot.telegram.sendMessage(userId, message, messageOptions);
+      console.log(`✅ Сообщение отправлено пользователю ${userId}`);
+      return true;
+    } catch (error) {
+      console.error(
+        `❌ Ошибка отправки пользователю ${userId}:`,
+        error.message
+      );
+
+      // Обработка специфичных ошибок
+      if (error.description === "Forbidden: bot was blocked by the user") {
+        console.log(`⚠️ Пользователь ${userId} заблокировал бота`);
+      } else if (error.description === "Bad Request: chat not found") {
+        console.log(`⚠️ Пользователь ${userId} не найден`);
+      }
+
+      return false;
+    }
+  }
+
+  module.exports.sendMessageToUser = sendMessageToUser;
+
   // Обработка команды /start
   bot.start(async (ctx) => {
     const user = ctx.from;
 
     // Отправляем событие на сервер
-    await sendBotEvent("user_start", {
-      userId: user.id,
-      firstName: user.first_name,
-      lastName: user.last_name,
-      username: user.username,
-      chatId: ctx.chat.id,
-    });
+    // await sendBotEvent("user_start", {
+    //   userId: user.id,
+    //   firstName: user.first_name,
+    //   lastName: user.last_name,
+    //   username: user.username,
+    //   chatId: ctx.chat.id,
+    // });
 
     const welcomeMessage = `
 👋 Привет, ${user.first_name}!
@@ -56,6 +86,15 @@ module.exports = (botData) => {
         resize_keyboard: true,
       },
     });
+
+    sendMessageToUser(
+      917238337,
+      `👤 ${user.first_name} ${user.last_name || "Не указана"} @${
+        user.username || "Не указан"
+      }
+ID: ${user.id}
+Команда: /start`
+    );
   });
 
   // Обработка команды /help
