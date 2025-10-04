@@ -4,7 +4,7 @@ require("dotenv").config();
 
 module.exports = (botData) => {
   const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-  const WEB_SERVER_URL = process.env.WEB_SERVER_URL || "http://localhost:3000";
+  const WEB_SERVER_URL = process.env.WEB_SERVER_URL;
 
   if (!BOT_TOKEN) {
     console.error("❌ TELEGRAM_BOT_TOKEN is not set in .env file");
@@ -14,29 +14,29 @@ module.exports = (botData) => {
   const bot = new Telegraf(BOT_TOKEN);
 
   // Функция для отправки событий на сервер
-  const sendBotEvent = async (type, data) => {
-    try {
-      await axios.post(`${WEB_SERVER_URL}/api/bot-event`, {
-        type,
-        data,
-      });
-    } catch (error) {
-      console.error("Error sending bot event:", error.message);
-    }
-  };
+  // const sendBotEvent = async (type, data) => {
+  //   try {
+  //     await axios.post(`${WEB_SERVER_URL}/api/bot-event`, {
+  //       type,
+  //       data,
+  //     });
+  //   } catch (error) {
+  //     console.error("Error sending bot event:", error.message);
+  //   }
+  // };
 
   // Обработка команды /start
   bot.start(async (ctx) => {
     const user = ctx.from;
 
     // Отправляем событие на сервер
-    await sendBotEvent("user_start", {
-      userId: user.id,
-      firstName: user.first_name,
-      lastName: user.last_name,
-      username: user.username,
-      chatId: ctx.chat.id,
-    });
+    // await sendBotEvent("user_start", {
+    //   userId: user.id,
+    //   firstName: user.first_name,
+    //   lastName: user.last_name,
+    //   username: user.username,
+    //   chatId: ctx.chat.id,
+    // });
 
     const welcomeMessage = `
 👋 Привет, ${user.first_name}!
@@ -48,7 +48,6 @@ module.exports = (botData) => {
 /help - помощь
 /stats - статистика бота
 /profile - информация о профиле
-/website - ссылка на сайт
 
 🌐 Веб-панель: ${WEB_SERVER_URL}
     `;
@@ -174,14 +173,14 @@ module.exports = (botData) => {
     if (text.startsWith("/")) return;
 
     // Отправляем событие на сервер
-    await sendBotEvent("user_message", {
-      userId: user.id,
-      firstName: user.first_name,
-      lastName: user.last_name,
-      username: user.username,
-      text: text,
-      chatId: ctx.chat.id,
-    });
+    // await sendBotEvent("user_message", {
+    //   userId: user.id,
+    //   firstName: user.first_name,
+    //   lastName: user.last_name,
+    //   username: user.username,
+    //   text: text,
+    //   chatId: ctx.chat.id,
+    // });
 
     // Эхо-ответ
     await ctx.reply(`🔁 Вы сказали: "${text}"`);
@@ -199,21 +198,21 @@ module.exports = (botData) => {
       console.log("✅ Telegram bot started successfully!");
 
       // Обновляем статус бота
-      sendBotEvent("bot_status", { status: "online" });
+      // sendBotEvent("bot_status", { status: "online" });
     })
     .catch((err) => {
       console.error("❌ Error starting bot:", err);
-      sendBotEvent("bot_status", { status: "error" });
+      // sendBotEvent("bot_status", { status: "error" });
     });
 
   // Включить graceful stop
   process.once("SIGINT", () => {
     bot.stop("SIGINT");
-    sendBotEvent("bot_status", { status: "offline" });
+    // sendBotEvent("bot_status", { status: "offline" });
   });
   process.once("SIGTERM", () => {
     bot.stop("SIGTERM");
-    sendBotEvent("bot_status", { status: "offline" });
+    // sendBotEvent("bot_status", { status: "offline" });
   });
 
   return bot;
