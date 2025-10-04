@@ -1,153 +1,220 @@
-const TelegramBot = require("node-telegram-bot-api");
+const { Telegraf } = require("telegraf");
 const axios = require("axios");
-const User = require("../models/User");
+require("dotenv").config();
 
-const token = process.env.TELEGRAM_BOT_TOKEN;
-const bot = new TelegramBot(token, { polling: true });
+module.exports = (botData) => {
+  const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+  const WEB_SERVER_URL = process.env.WEB_SERVER_URL || "http://localhost:3000";
 
-// Сохраняем пользователя в базу
-async function saveUser(msg) {
-  try {
-    const user = await User.findOneAndUpdate(
-      { telegramId: msg.from.id },
-      {
-        firstName: msg.from.first_name,
-        lastName: msg.from.last_name || "",
-        username: msg.from.username || "",
-        languageCode: msg.from.language_code || "en",
-        lastActivity: new Date(),
-      },
-      { upsert: true, new: true }
-    );
-    return user;
-  } catch (error) {
-    console.error("Error saving user:", error);
+  if (!BOT_TOKEN) {
+    console.error("❌ TELEGRAM_BOT_TOKEN is not set in .env file");
+    return;
   }
-}
 
-// Команда /start
-bot.onText(/\/start/, async (msg) => {
-  const chatId = msg.chat.id;
-  const user = await saveUser(msg);
+  const bot = new Telegraf(BOT_TOKEN);
 
-  const welcomeMessage = `
-👋 Привет, ${msg.from.first_name}!
+  // Функция для отправки событий на сервер
+  const sendBotEvent = async (type, data) => {
+    try {
+      await axios.post(`${WEB_SERVER_URL}/api/bot-event`, {
+        type,
+        data,
+      });
+    } catch (error) {
+      console.error("Error sending bot event:", error.message);
+    }
+  };
 
-Я пример Telegram бота с веб-интерфейсом.
+  // Обработка команды /start
+  bot.start(async (ctx) => {
+    const user = ctx.from;
 
-Доступные команды:
+    // Отправляем событие на сервер
+    await sendBotEvent("user_start", {
+      userId: user.id,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      username: user.username,
+      chatId: ctx.chat.id,
+    });
+
+    const welcomeMessage = `
+👋 Привет, ${user.first_name}!
+
+🤖 Я Telegram бот с веб-панелью управления.
+
+📊 Доступные команды:
 /start - начать работу
 /help - помощь
+/stats - статистика бота
 /profile - информация о профиле
 /website - ссылка на сайт
-  `;
 
-  bot.sendMessage(chatId, welcomeMessage, {
-    reply_markup: {
-      keyboard: [
-        ["📊 Мой профиль", "🌐 Сайт"],
-        ["📞 Связаться", "ℹ️ Помощь"],
-      ],
-      resize_keyboard: true,
-    },
+🌐 Веб-панель: ${WEB_SERVER_URL}
+    `;
+
+    await ctx.reply(welcomeMessage, {
+      reply_markup: {
+        keyboard: [
+          ["📊 Статистика", "👤 Профиль"],
+          ["🌐 Сайт", "ℹ️ Помощь"],
+        ],
+        resize_keyboard: true,
+      },
+    });
   });
-});
 
-// Команда /help
-bot.onText(/\/help/, (msg) => {
-  const chatId = msg.chat.id;
-  bot.sendMessage(
-    chatId,
-    `
+  // Обработка команды /help
+  bot.help(async (ctx) => {
+    const helpMessage = `
 📖 Помощь по боту:
 
-Это демонстрационный бот с интеграцией веб-сайта.
+Это демонстрационный Telegram бот с веб-интерфейсом.
 
-Функции:
-• Управление профилем
-• Интеграция с веб-сайтом
-• База данных пользователей
-• REST API
-  `
-  );
-});
+🔧 Функции:
+• Отслеживание пользователей
+• Статистика в реальном времени
+• История сообщений
+• Веб-панель управления
 
-// Команда /profile
-bot.onText(/\/profile/, async (msg) => {
-  const chatId = msg.chat.id;
-  const user = await User.findOne({ telegramId: msg.from.id });
+💻 Технологии:
+• Backend: Node.js + Express
+• Bot: Telegraf
+• Frontend: HTML/CSS/JS
+• Хранилище: In-memory
 
-  if (user) {
+🌐 Веб-сайт: ${WEB_SERVERURL}
+    `;
+
+    await ctx.reply(helpMessage);
+  });
+
+  // Обработка команды /stats
+  bot.command("stats", async (ctx) => {
+    const userCount = botData.stats.totalUsers;
+    const messageCount = botData.stats.totalMessages;
+
+    const statsMessage = `
+📊 Статистика бота:
+
+👥 Всего пользователей: ${userCount}
+💬 Всего сообщений: ${messageCount}
+🆔 Ваш ID: ${ctx.from.id}
+🌐 Сайт: ${WEB_SERVER_URL}
+    `;
+
+    await ctx.reply(statsMessage);
+  });
+
+  // Обработка команды /profile
+  bot.command("profile", async (ctx) => {
+    const user = ctx.from;
+    const userData = botData.users.get(user.id);
+
     const profileMessage = `
 👤 Ваш профиль:
 
-ID: ${user.telegramId}
-Имя: ${user.firstName}
-Фамилия: ${user.lastName || "Не указана"}
-Username: @${user.username || "Не указан"}
-Зарегистрирован: ${user.createdAt.toLocaleDateString()}
+🆔 ID: ${user.id}
+👤 Имя: ${user.first_name}
+📝 Фамилия: ${user.last_name || "Не указана"}
+🔗 Username: @${user.username || "Не указан"}
+📅 Первый визит: ${
+      userData ? new Date(userData.firstSeen).toLocaleString() : "Только что"
+    }
     `;
 
-    bot.sendMessage(chatId, profileMessage);
-  }
-});
-
-// Команда /website
-bot.onText(/\/website/, (msg) => {
-  const chatId = msg.chat.id;
-  const websiteUrl = process.env.WEBSITE_URL || "http://localhost:3000";
-
-  bot.sendMessage(chatId, `🌐 Посетите наш сайт: ${websiteUrl}`, {
-    reply_markup: {
-      inline_keyboard: [[{ text: "📱 Открыть сайт", url: websiteUrl }]],
-    },
+    await ctx.reply(profileMessage);
   });
-});
 
-// Обработка текстовых сообщений
-bot.on("message", async (msg) => {
-  if (msg.text && !msg.text.startsWith("/")) {
-    const chatId = msg.chat.id;
+  // Обработка команды /website
+  bot.command("website", async (ctx) => {
+    await ctx.reply(`🌐 Наш веб-сайт: ${WEB_SERVER_URL}`, {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: "📱 Открыть сайт",
+              url: WEB_SERVER_URL,
+            },
+          ],
+        ],
+      },
+    });
+  });
 
-    switch (msg.text) {
-      case "📊 Мой профиль":
-        const user = await User.findOne({ telegramId: msg.from.id });
-        if (user) {
-          bot.sendMessage(
-            chatId,
-            `👤 Ваш ID: ${user.telegramId}\nИмя: ${user.firstName}`
-          );
-        }
-        break;
+  // Обработка текстовых сообщений (кнопки)
+  bot.hears("📊 Статистика", async (ctx) => {
+    const userCount = botData.stats.totalUsers;
+    const messageCount = botData.stats.totalMessages;
 
-      case "🌐 Сайт":
-        const websiteUrl = process.env.WEBSITE_URL || "http://localhost:3000";
-        bot.sendMessage(chatId, `Перейдите на наш сайт: ${websiteUrl}`);
-        break;
+    await ctx.reply(
+      `📊 Статистика:\nПользователей: ${userCount}\nСообщений: ${messageCount}`
+    );
+  });
 
-      case "📞 Связаться":
-        bot.sendMessage(
-          chatId,
-          "📧 Email: support@example.com\n📱 Телефон: +7 (999) 999-99-99"
-        );
-        break;
+  bot.hears("👤 Профиль", async (ctx) => {
+    const user = ctx.from;
+    await ctx.reply(`👤 Ваш профиль:\nID: ${user.id}\nИмя: ${user.first_name}`);
+  });
 
-      case "ℹ️ Помощь":
-        bot.sendMessage(chatId, "Для помощи используйте команду /help");
-        break;
+  bot.hears("🌐 Сайт", async (ctx) => {
+    await ctx.reply(`🌐 Сайт: ${WEB_SERVER_URL}`);
+  });
 
-      default:
-        bot.sendMessage(
-          chatId,
-          "Я не понимаю эту команду. Используйте /help для списка команд."
-        );
-    }
-  }
-});
+  bot.hears("ℹ️ Помощь", async (ctx) => {
+    await ctx.reply("Для помощи используйте команду /help");
+  });
 
-// Обработка ошибок
-bot.on("polling_error", (error) => {
-  console.error("Polling error:", error);
-});
+  // Обработка всех текстовых сообщений
+  bot.on("text", async (ctx) => {
+    const user = ctx.from;
+    const text = ctx.message.text;
 
-module.exports = bot;
+    // Игнорируем команды
+    if (text.startsWith("/")) return;
+
+    // Отправляем событие на сервер
+    await sendBotEvent("user_message", {
+      userId: user.id,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      username: user.username,
+      text: text,
+      chatId: ctx.chat.id,
+    });
+
+    // Эхо-ответ
+    await ctx.reply(`🔁 Вы сказали: "${text}"`);
+  });
+
+  // Обработка ошибок
+  bot.catch((err, ctx) => {
+    console.error(`Error for ${ctx.updateType}:`, err);
+  });
+
+  // Запуск бота
+  bot
+    .launch()
+    .then(() => {
+      console.log("✅ Telegram bot started successfully!");
+
+      // Обновляем статус бота
+      sendBotEvent("bot_status", { status: "online" });
+    })
+    .catch((err) => {
+      console.error("❌ Error starting bot:", err);
+      sendBotEvent("bot_status", { status: "error" });
+    });
+
+  // Включить graceful stop
+  process.once("SIGINT", () => {
+    bot.stop("SIGINT");
+    sendBotEvent("bot_status", { status: "offline" });
+  });
+  process.once("SIGTERM", () => {
+    bot.stop("SIGTERM");
+    sendBotEvent("bot_status", { status: "offline" });
+  });
+
+  return bot;
+};
