@@ -1,6 +1,6 @@
-const today = new Date(); // Сегодня
-const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000); // Завтра
-const dayAfterTomorrow = new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000); // Послезавтра
+const today = new Date();
+const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+const dayAfterTomorrow = new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000);
 
 // Функция для получения названия дня недели
 function getDayName(date) {
@@ -15,6 +15,7 @@ function getDayName(date) {
   ];
   return days[date.getDay()];
 }
+
 // Функция для получения короткого названия месяца
 function getShortMonthName(date) {
   const months = [
@@ -34,52 +35,138 @@ function getShortMonthName(date) {
   return months[date.getMonth()];
 }
 
+// Форматирование даты для API (YYYY-MM-DD)
+function formatDateForAPI(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+// Получение даты из текста (например: "15 янв.")
+function parseDateFromText(dateText, baseDate = today) {
+  const [day, monthText] = dateText.split(" ");
+  const monthNames = [
+    "янв.",
+    "фев.",
+    "мар.",
+    "апр.",
+    "мая",
+    "июн.",
+    "июл.",
+    "авг.",
+    "сен.",
+    "окт.",
+    "ноя.",
+    "дек.",
+  ];
+  const monthIndex = monthNames.findIndex((name) => name === monthText);
+
+  if (monthIndex !== -1) {
+    const year = baseDate.getFullYear();
+    // Если месяц уже прошел в этом году, берем следующий год
+    const targetDate = new Date(year, monthIndex, parseInt(day));
+    if (targetDate < baseDate) {
+      targetDate.setFullYear(year + 1);
+    }
+    return targetDate;
+  }
+  return baseDate;
+}
+
+let currentDoctorId = null;
+let currentSelectedDate = null;
+
 function toggleClinicDropdown() {
   alert("Здесь будет открыт список клиник");
 }
 
-function selectDay(button) {
-  // Убираем выделение со всех кнопок
-  document.querySelectorAll(".day-button").forEach((btn) => {
-    btn.classList.remove("selected");
-  });
+function selectDay(button, doctorId) {
+  // Убираем выделение со всех кнопок в этом виджете
+  const widget = button.closest(".appointment-widget");
+  if (widget) {
+    widget.querySelectorAll(".day-button").forEach((btn) => {
+      btn.classList.remove("selected");
+    });
+  }
+
   // Добавляем выделение выбранной кнопке
   button.classList.add("selected");
 
-  // Здесь можно добавить загрузку доступного времени для выбранной даты
-  updateTimeSlots(button.querySelector(".date-full").textContent);
+  // Сохраняем текущего доктора и дату
+  currentDoctorId = doctorId;
+  const dateText = button.querySelector(".date-full").textContent;
+  currentSelectedDate = parseDateFromText(dateText);
+  const formattedDate = formatDateForAPI(currentSelectedDate);
+
+  // Загружаем доступное время для выбранной даты
+  updateTimeSlots(formattedDate, doctorId);
 }
 
 function openCalendar() {
   alert("Здесь будет открыт полный календарь");
 }
 
-function updateTimeSlots(selectedDate) {
-  console.log("Загрузка времени для даты:", selectedDate);
-  // Здесь будет логика обновления доступного времени
+// Обновление доступных временных слотов
+async function updateTimeSlots(selectedDate, doctorId) {
+  const timeGrid = document.querySelector(".time-grid");
+  if (!timeGrid) return;
+
+  try {
+    // Получаем занятые слоты с сервера
+    const response = await fetch(
+      `/api/availability/${doctorId}/${selectedDate}`
+    );
+    const data = await response.json();
+    const bookedSlots = data.bookedSlots.map((slot) => slot.time);
+
+    // Генерируем кнопки времени
+    let timeButtons = "";
+    const step = 15;
+    const breakStart = 12.5; // 12:30
+    const breakEnd = 14; // 14:00
+
+    for (let decimalHour = 9; decimalHour <= 17; decimalHour += 0.25) {
+      // Пропускаем время перерыва
+      if (decimalHour >= breakStart && decimalHour < breakEnd) {
+        continue;
+      }
+
+      const hours = Math.floor(decimalHour);
+      const minutes = (decimalHour % 1) * 60;
+      const timeString = `${hours.toString().padStart(2, "0")}:${minutes
+        .toString()
+        .padStart(2, "0")}`;
+
+      // Проверяем, занят ли слот
+      const isBooked = bookedSlots.includes(timeString);
+      const buttonClass = isBooked ? "time-button disabled" : "time-button";
+
+      timeButtons += `<button class="${buttonClass}" 
+                ${
+                  isBooked
+                    ? "disabled"
+                    : `onclick="openBookingForm('${selectedDate}', '${timeString}', ${doctorId})"`
+                }>
+                ${timeString}
+            </button>\n`;
+    }
+
+    timeGrid.innerHTML = timeButtons;
+  } catch (error) {
+    console.error("Ошибка загрузки доступного времени:", error);
+    timeGrid.innerHTML = "<p>Ошибка загрузки времени</p>";
+  }
 }
 
-// Инициализация
-document.addEventListener("DOMContentLoaded", function () {
-  // Автоматически выбираем первый доступный день
-  const firstAvailableDay = document.querySelector(
-    ".day-button:not(.disabled)"
-  );
-  if (firstAvailableDay) {
-    firstAvailableDay.classList.add("selected");
-  }
-});
-
-function generateTimeButtons() {
+// Генерация кнопок времени (для инициализации)
+function generateTimeButtons(doctorId = 1) {
   let timeButtons = "";
-  const step = 15; // 15 минут шаг
-
-  // Перерыв: с 12:30 до 14:00
-  const breakStart = 12.6; // 12:30 в десятичном формате
-  const breakEnd = 14; // 14:00
+  const step = 15;
+  const breakStart = 12.5;
+  const breakEnd = 14;
 
   for (let decimalHour = 9; decimalHour <= 17; decimalHour += 0.25) {
-    // Пропускаем время перерыва
     if (decimalHour >= breakStart && decimalHour < breakEnd) {
       continue;
     }
@@ -89,14 +176,292 @@ function generateTimeButtons() {
     const timeString = `${hours.toString().padStart(2, "0")}:${minutes
       .toString()
       .padStart(2, "0")}`;
+    const formattedDate = formatDateForAPI(today);
 
-    timeButtons += `<a href="/ticket/profiles?time=${timeString}" class="time-button">${timeString}</a>\n`;
+    timeButtons += `<button class="time-button" 
+            onclick="openBookingForm('${formattedDate}', '${timeString}', ${doctorId})">
+            ${timeString}
+        </button>\n`;
   }
 
   return timeButtons;
 }
 
-const calendarHTML = `<div class="appointment-widget">
+// Функция открытия формы записи
+function openBookingForm(date, time, doctorId) {
+  // Закрываем предыдущую форму если есть
+  closeBookingForm();
+
+  const formHTML = `
+        <div class="modal-overlay" id="bookingModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Запись на прием</h2>
+                    <button class="close-button" onclick="closeBookingForm()">×</button>
+                </div>
+                
+                <form id="bookingForm" class="booking-form">
+                    <input type="hidden" name="doctorId" value="${doctorId}">
+                    <input type="hidden" name="date" value="${date}">
+                    <input type="hidden" name="time" value="${time}">
+                    
+                    <div class="appointment-info">
+                        <h3>Детали записи</h3>
+                        <p><strong>Дата:</strong> ${formatDisplayDate(date)}</p>
+                        <p><strong>Время:</strong> ${time}</p>
+                    </div>
+                    
+                    <div class="form-section">
+                        <h3>Информация о пациенте</h3>
+                        
+                        <div class="form-group">
+                            <label>ФИО *</label>
+                            <input type="text" name="fullName" required placeholder="Иванов Иван Иванович">
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Телефон *</label>
+                                <input type="tel" name="phone" required placeholder="+7 (912) 345-67-89">
+                            </div>
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" name="email" placeholder="example@mail.ru">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Дата рождения *</label>
+                            <input type="date" name="birthDate" required max="${
+                              new Date().toISOString().split("T")[0]
+                            }">
+                        </div>
+                        
+                        <div class="form-checkbox">
+                            <label>
+                                <input type="checkbox" name="isMobilePatient" onchange="toggleMobilePatient(this)">
+                                Мобильный пациент (инвалид)
+                            </label>
+                        </div>
+                        
+                        <div class="form-checkbox">
+                            <label>
+                                <input type="checkbox" name="isChild" onchange="toggleParentInfo(this)">
+                                Это ребенок
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Блок данных родителя -->
+                    <div class="form-section" id="parentInfoSection" style="display: none;">
+                        <h3>Данные родителя/законного представителя</h3>
+                        
+                        <div class="form-group">
+                            <label>ФИО родителя *</label>
+                            <input type="text" name="parentFullName" placeholder="Петрова Мария Сергеевна">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Телефон родителя *</label>
+                            <input type="tel" name="parentPhone" placeholder="+7 (912) 345-67-89">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Email родителя</label>
+                            <input type="email" name="parentEmail" placeholder="parent@mail.ru">
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn-cancel" onclick="closeBookingForm()">Отмена</button>
+                        <button type="submit" class="btn-submit">Записаться</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+
+  document.body.insertAdjacentHTML("beforeend", formHTML);
+
+  // Обработка формы
+  document
+    .getElementById("bookingForm")
+    .addEventListener("submit", handleBookingSubmit);
+}
+
+// Форматирование даты для отображения
+function formatDisplayDate(dateString) {
+  const date = new Date(dateString + "T00:00:00");
+  const day = date.getDate();
+  const month = getShortMonthName(date);
+  const year = date.getFullYear();
+  const dayName = getDayName(date);
+  return `${day} ${month} ${year} (${dayName})`;
+}
+
+// Переключение блока данных родителя
+function toggleParentInfo(checkbox) {
+  const parentSection = document.getElementById("parentInfoSection");
+  const parentInputs = parentSection.querySelectorAll('input[name^="parent"]');
+
+  if (checkbox.checked) {
+    parentSection.style.display = "block";
+    parentInputs.forEach((input) => {
+      if (input.name === "parentFullName" || input.name === "parentPhone") {
+        input.required = true;
+      }
+    });
+  } else {
+    parentSection.style.display = "none";
+    parentInputs.forEach((input) => (input.required = false));
+  }
+}
+
+// Переключение мобильного пациента (можно добавить дополнительную логику)
+function toggleMobilePatient(checkbox) {
+  // Здесь можно добавить дополнительную логику для мобильных пациентов
+  console.log("Мобильный пациент:", checkbox.checked);
+}
+
+// Закрытие формы
+function closeBookingForm() {
+  const modal = document.getElementById("bookingModal");
+  if (modal) modal.remove();
+}
+
+// Обработчик отправки формы
+async function handleBookingSubmit(event) {
+  event.preventDefault();
+
+  const submitButton = event.target.querySelector(".btn-submit");
+  const originalText = submitButton.textContent;
+  submitButton.textContent = "Запись...";
+  submitButton.disabled = true;
+
+  try {
+    const formData = new FormData(event.target);
+    const bookingData = {
+      doctorId: parseInt(formData.get("doctorId")),
+      date: formData.get("date"),
+      time: formData.get("time"),
+      patient: {
+        fullName: formData.get("fullName").trim(),
+        phone: formData.get("phone").trim(),
+        email: formData.get("email").trim() || null,
+        birthDate: formData.get("birthDate"),
+        isMobilePatient: formData.get("isMobilePatient") === "on",
+        isChild: formData.get("isChild") === "on",
+      },
+      parentInfo:
+        formData.get("isChild") === "on"
+          ? {
+              fullName: formData.get("parentFullName").trim(),
+              phone: formData.get("parentPhone").trim(),
+              email: formData.get("parentEmail").trim() || null,
+            }
+          : null,
+    };
+
+    // Валидация телефона
+    if (!isValidPhone(bookingData.patient.phone)) {
+      throw new Error("Введите корректный номер телефона");
+    }
+
+    // Валидация email если указан
+    if (bookingData.patient.email && !isValidEmail(bookingData.patient.email)) {
+      throw new Error("Введите корректный email");
+    }
+
+    const result = await saveAppointment(bookingData);
+
+    if (result.success) {
+      showSuccessMessage("Запись успешно создана!");
+      closeBookingForm();
+
+      // Обновляем календарь если есть выбранная дата
+      if (currentSelectedDate && currentDoctorId) {
+        const formattedDate = formatDateForAPI(currentSelectedDate);
+        updateTimeSlots(formattedDate, currentDoctorId);
+      }
+    } else {
+      throw new Error(result.error || "Ошибка при создании записи");
+    }
+  } catch (error) {
+    showErrorMessage(error.message);
+  } finally {
+    submitButton.textContent = originalText;
+    submitButton.disabled = false;
+  }
+}
+
+// Валидация телефона
+function isValidPhone(phone) {
+  const phoneRegex =
+    /^(\+7|8)[\s\-]?\(?[0-9]{3}\)?[\s\-]?[0-9]{3}[\s\-]?[0-9]{2}[\s\-]?[0-9]{2}$/;
+  return phoneRegex.test(phone.replace(/\s/g, ""));
+}
+
+// Валидация email
+function isValidEmail(email) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+// Сохранение записи через API
+async function saveAppointment(bookingData) {
+  try {
+    const response = await fetch("/api/appointments", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(bookingData),
+    });
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    throw new Error("Ошибка сети: " + error.message);
+  }
+}
+
+// Показать сообщение об успехе
+function showSuccessMessage(message) {
+  alert(message); // Можно заменить на красивый toast
+}
+
+// Показать сообщение об ошибке
+function showErrorMessage(message) {
+  alert("Ошибка: " + message); // Можно заменить на красивый toast
+}
+
+// Инициализация календаря при загрузке
+document.addEventListener("DOMContentLoaded", function () {
+  // Автоматически выбираем первый доступный день
+  const firstAvailableDay = document.querySelector(
+    ".day-button:not(.disabled)"
+  );
+  if (firstAvailableDay) {
+    firstAvailableDay.classList.add("selected");
+
+    // Если есть doctorId в data-атрибуте, используем его
+    const doctorId =
+      firstAvailableDay.closest(".appointment-widget")?.dataset?.doctorId || 1;
+    currentDoctorId = doctorId;
+
+    const dateText = firstAvailableDay.querySelector(".date-full").textContent;
+    currentSelectedDate = parseDateFromText(dateText);
+    const formattedDate = formatDateForAPI(currentSelectedDate);
+
+    // Загружаем доступное время
+    updateTimeSlots(formattedDate, doctorId);
+  }
+});
+
+// Генерация HTML календаря для доктора
+function generateCalendarHTML(doctorId = 1) {
+  return `
+    <div class="appointment-widget" data-doctor-id="${doctorId}">
         <!-- Выбор клиники -->
         <button class="dropdown-button" onclick="toggleClinicDropdown()">
             <div class="clinic-info">
@@ -120,23 +485,23 @@ const calendarHTML = `<div class="appointment-widget">
 
         <!-- Выбор дня -->
         <div class="day-grid">
-            <button class="day-button selected" onclick="selectDay(this)">
+            <button class="day-button selected" onclick="selectDay(this, ${doctorId})">
                 <time class="day-name">${getDayName(today)}</time>
                 <time class="date-full">${today.getDate()} ${getShortMonthName(
-  today
-)}</time>
+    today
+  )}</time>
             </button>
-            <button class="day-button selected" onclick="selectDay(this)>
+            <button class="day-button" onclick="selectDay(this, ${doctorId})">
                 <time class="day-name">${getDayName(tomorrow)}</time>
                 <time class="date-full">${tomorrow.getDate()} ${getShortMonthName(
-  tomorrow
-)}</time>
+    tomorrow
+  )}</time>
             </button>
             <button class="day-button disabled">
                 <time class="day-name">${getDayName(dayAfterTomorrow)}</time>
                 <time class="date-full">${dayAfterTomorrow.getDate()} ${getShortMonthName(
-  dayAfterTomorrow
-)}</time>
+    dayAfterTomorrow
+  )}</time>
             </button>
             <button class="calendar-button" onclick="openCalendar()">
                 <svg class="calendar-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -147,6 +512,10 @@ const calendarHTML = `<div class="appointment-widget">
 
         <!-- Выбор времени -->
         <div class="time-grid">
-            ${generateTimeButtons()}
+            ${generateTimeButtons(doctorId)}
         </div>
     </div>`;
+}
+
+// Глобальная переменная для календаря
+const calendarHTML = generateCalendarHTML();

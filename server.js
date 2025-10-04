@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
-require("dotenv").config();
+const database = require("./database"); // новый импорт
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -9,8 +9,44 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
+
+// Инициализация БД при старте
+database.init().catch(console.error);
+
+// API для проверки доступности
+app.get("/api/availability/:doctorId/:date", async (req, res) => {
+  try {
+    const { doctorId, date } = req.params;
+    const bookedSlots = await database.getBookedSlots(doctorId, date);
+    res.json({ bookedSlots });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// API для создания записи
+app.post("/api/appointments", async (req, res) => {
+  try {
+    const bookingData = req.body;
+
+    // Проверяем доступность
+    const isAvailable = await database.isTimeSlotAvailable(
+      bookingData.doctorId,
+      bookingData.date,
+      bookingData.time
+    );
+
+    if (!isAvailable) {
+      return res.status(400).json({ error: "Время уже занято" });
+    }
+
+    const appointmentId = await database.createAppointment(bookingData);
+    res.json({ success: true, appointmentId });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Храним данные в памяти
 const botData = {
