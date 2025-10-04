@@ -14,29 +14,29 @@ module.exports = (botData) => {
   const bot = new Telegraf(BOT_TOKEN);
 
   // Функция для отправки событий на сервер
-  // const sendBotEvent = async (type, data) => {
-  //   try {
-  //     await axios.post(`${WEB_SERVER_URL}/api/bot-event`, {
-  //       type,
-  //       data,
-  //     });
-  //   } catch (error) {
-  //     console.error("Error sending bot event:", error.message);
-  //   }
-  // };
+  const sendBotEvent = async (type, data) => {
+    try {
+      await axios.post(`${WEB_SERVER_URL}/api/bot-event`, {
+        type,
+        data,
+      });
+    } catch (error) {
+      console.error("Error sending bot event:", error.message);
+    }
+  };
 
   // Обработка команды /start
   bot.start(async (ctx) => {
     const user = ctx.from;
 
     // Отправляем событие на сервер
-    // await sendBotEvent("user_start", {
-    //   userId: user.id,
-    //   firstName: user.first_name,
-    //   lastName: user.last_name,
-    //   username: user.username,
-    //   chatId: ctx.chat.id,
-    // });
+    await sendBotEvent("user_start", {
+      userId: user.id,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      username: user.username,
+      chatId: ctx.chat.id,
+    });
 
     const welcomeMessage = `
 👋 Привет, ${user.first_name}!
