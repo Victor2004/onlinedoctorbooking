@@ -5,7 +5,7 @@ async function migrateFromJSON() {
   await database.init();
 
   // Миграция докторов
-  const doctorsData = JSON.parse(fs.readFileSync("data/doctors.json"));
+  const doctorsData = JSON.parse(fs.readFileSync("public/data/doctors.json"));
   for (const doctor of doctorsData) {
     await database.db.run(
       "INSERT OR IGNORE INTO doctors (name, specialty, avatar) VALUES (?, ?, ?)",
@@ -14,9 +14,9 @@ async function migrateFromJSON() {
   }
 
   // Миграция записей (если есть)
-  if (fs.existsSync("data/appointments.json")) {
+  if (fs.existsSync("public/data/appointments.json")) {
     const appointmentsData = JSON.parse(
-      fs.readFileSync("data/appointments.json")
+      fs.readFileSync("public/data/appointments.json")
     );
     for (const appointment of appointmentsData.appointments) {
       await database.createAppointment(appointment);
