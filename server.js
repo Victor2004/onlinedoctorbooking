@@ -20,7 +20,6 @@ database
   })
   .catch(console.error);
 
-// === ДОБАВЬТЕ ЭТО ===
 // Создаем структуру данных для бота
 const botData = {
   users: new Map(),
