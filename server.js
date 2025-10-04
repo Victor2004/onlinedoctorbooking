@@ -1,7 +1,8 @@
+// server.js
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
-const database = require("./database"); // новый импорт
+const database = require("./database"); // исправленный импорт
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,13 +13,28 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 // Инициализация БД при старте
-database.init().catch(console.error);
+database
+  .init()
+  .then(() => {
+    console.log("✅ Database ready");
+  })
+  .catch(console.error);
+
+// API для получения докторов
+app.get("/api/doctors", async (req, res) => {
+  try {
+    const doctors = await database.getDoctors();
+    res.json(doctors);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // API для проверки доступности
 app.get("/api/availability/:doctorId/:date", async (req, res) => {
   try {
     const { doctorId, date } = req.params;
-    const bookedSlots = await database.getBookedSlots(doctorId, date);
+    const bookedSlots = await database.getBookedSlots(parseInt(doctorId), date);
     res.json({ bookedSlots });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -48,151 +64,35 @@ app.post("/api/appointments", async (req, res) => {
   }
 });
 
-// Храним данные в памяти
-const botData = {
-  users: new Map(), // userId -> userData
-  messages: [],
-  botStatus: "offline",
-  startTime: new Date(),
-  stats: {
-    totalUsers: 0,
-    totalMessages: 0,
-    usersToday: 0,
-  },
-};
-
-// Функции для работы с данными
-const updateUser = (userId, userData) => {
-  if (!botData.users.has(userId)) {
-    botData.stats.totalUsers++;
-    // Проверяем новых пользователей за сегодня
-    const today = new Date().toDateString();
-    const userFirstSeen = botData.users.get(userId)?.firstSeen;
-    if (!userFirstSeen || new Date(userFirstSeen).toDateString() !== today) {
-      botData.stats.usersToday++;
-    }
-  }
-
-  botData.users.set(userId, {
-    ...botData.users.get(userId),
-    ...userData,
-    lastActivity: new Date(),
-    firstSeen: botData.users.get(userId)?.firstSeen || new Date(),
-  });
-};
-
-const addMessage = (messageData) => {
-  botData.messages.push({
-    ...messageData,
-    time: new Date(),
-    id: Date.now() + Math.random(),
-  });
-  botData.stats.totalMessages++;
-
-  // Ограничиваем историю сообщений
-  if (botData.messages.length > 1000) {
-    botData.messages = botData.messages.slice(-500);
-  }
-};
-
-// API маршруты
-app.get("/api/stats", (req, res) => {
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-  const recentMessages = botData.messages.filter(
-    (msg) => new Date(msg.time) > todayStart
-  ).length;
-
-  res.json({
-    users: {
-      total: botData.stats.totalUsers,
-      today: botData.stats.usersToday,
-      active: Array.from(botData.users.values()).length,
-    },
-    messages: {
-      total: botData.stats.totalMessages,
-      today: recentMessages,
-    },
-    botStatus: botData.botStatus,
-    serverTime: now,
-    uptime: Math.floor((now - botData.startTime) / 1000),
-    lastMessages: botData.messages.slice(-10).reverse(),
-  });
-});
-
-app.get("/api/users", (req, res) => {
-  const usersArray = Array.from(botData.users.entries()).map(
-    ([userId, userData]) => ({
-      id: userId,
-      firstName: userData.firstName,
-      lastName: userData.lastName,
-      username: userData.username,
-      firstSeen: userData.firstSeen,
-      lastActivity: userData.lastActivity,
-      messageCount: botData.messages.filter((msg) => msg.userId === userId)
-        .length,
-    })
-  );
-
-  res.json(
-    usersArray.sort(
-      (a, b) => new Date(b.lastActivity) - new Date(a.lastActivity)
-    )
-  );
-});
-
-app.get("/api/messages", (req, res) => {
-  const limit = parseInt(req.query.limit) || 50;
-  const messages = botData.messages
-    .slice(-limit)
-    .reverse()
-    .map((msg) => ({
-      ...msg,
-      user: botData.users.get(msg.userId) || { firstName: "Unknown" },
-    }));
-
-  res.json(messages);
-});
-
-// Вебхук для бота
-app.post("/api/bot-event", (req, res) => {
-  const { type, data } = req.body;
-
+// API для получения информации о записи
+app.get("/api/appointments/:id", async (req, res) => {
   try {
-    switch (type) {
-      case "user_start":
-        updateUser(data.userId, {
-          firstName: data.firstName,
-          lastName: data.lastName,
-          username: data.username,
-        });
-        addMessage({
-          type: "start",
-          userId: data.userId,
-          text: "/start",
-        });
-        break;
-
-      case "user_message":
-        updateUser(data.userId, {
-          firstName: data.firstName,
-          lastName: data.lastName,
-          username: data.username,
-        });
-        addMessage({
-          type: "message",
-          userId: data.userId,
-          text: data.text,
-        });
-        break;
-
-      case "bot_status":
-        botData.botStatus = data.status;
-        break;
+    const appointment = await database.getAppointment(parseInt(req.params.id));
+    if (!appointment) {
+      return res.status(404).json({ error: "Запись не найдена" });
     }
+    res.json(appointment);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
-    res.json({ success: true, message: "Event processed" });
+// API для управления недоступными датами (для админки)
+app.get("/api/unavailable-dates", async (req, res) => {
+  try {
+    const doctorId = req.query.doctorId ? parseInt(req.query.doctorId) : null;
+    const dates = await database.getUnavailableDates(doctorId);
+    res.json(dates);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api/unavailable-dates", async (req, res) => {
+  try {
+    const { date, doctorId, reason } = req.body;
+    await database.addUnavailableDate(date, doctorId, reason);
+    res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -220,13 +120,13 @@ app.get("/api/info", (req, res) => {
   res.json({
     message: "Telegram Bot Dashboard API",
     version: "1.0.0",
-    framework: "Node.js + Express + Telegraf",
-    storage: "In-memory",
+    framework: "Node.js + Express + SQLite",
     endpoints: {
-      "/api/stats": "Get bot statistics",
-      "/api/users": "Get users list",
-      "/api/messages": "Get messages history",
-      "/api/bot-event": "Bot webhook (POST)",
+      "/api/doctors": "Get doctors list",
+      "/api/availability/:doctorId/:date": "Get available time slots",
+      "/api/appointments": "Create appointment (POST)",
+      "/api/appointments/:id": "Get appointment details",
+      "/api/unavailable-dates": "Manage unavailable dates",
     },
   });
 });
@@ -236,9 +136,6 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server is running on port ${PORT}`);
   console.log(`🌐 Website: http://localhost:${PORT}`);
   console.log(`📊 API: http://localhost:${PORT}/api/stats`);
-  console.log(`🤖 Bot: http://localhost:${PORT}/bot/bot.js`);
-  console.log(`💾 Storage: In-memory (no database)`);
-
-  // Запускаем бота
-  require("./bot/bot.js")(botData);
+  console.log(`🤖 Bot: Integrated in server`);
+  console.log(`💾 Database: SQLite (database.sqlite)`);
 });

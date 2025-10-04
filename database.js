@@ -1,3 +1,4 @@
+// database.js
 const sqlite3 = require("sqlite3").verbose();
 const { open } = require("sqlite");
 const path = require("path");
@@ -8,13 +9,18 @@ class Database {
   }
 
   async init() {
-    this.db = await open({
-      filename: path.join(__dirname, "database.sqlite"),
-      driver: sqlite3.Database,
-    });
+    try {
+      this.db = await open({
+        filename: path.join(__dirname, "database.sqlite"),
+        driver: sqlite3.Database,
+      });
 
-    await this.createTables();
-    console.log("✅ SQLite database initialized");
+      await this.createTables();
+      await this.insertSampleData();
+      console.log("✅ SQLite database initialized");
+    } catch (error) {
+      console.error("❌ Database initialization error:", error);
+    }
   }
 
   async createTables() {
@@ -72,76 +78,183 @@ class Database {
         `);
   }
 
+  async insertSampleData() {
+    // Проверяем, есть ли уже доктора
+    const doctorsCount = await this.db.get(
+      "SELECT COUNT(*) as count FROM doctors"
+    );
+
+    if (doctorsCount.count === 0) {
+      // Добавляем тестовых докторов
+      await this.db.run(
+        `
+                INSERT INTO doctors (name, specialty, avatar) 
+                VALUES (?, ?, ?)
+            `,
+        ["Иванов Иван Иванович", "Кардиолог", "doctor1.jpg"]
+      );
+
+      await this.db.run(
+        `
+                INSERT INTO doctors (name, specialty, avatar) 
+                VALUES (?, ?, ?)
+            `,
+        ["Петрова Мария Сергеевна", "Невролог", "doctor2.jpg"]
+      );
+
+      console.log("✅ Sample doctors added");
+    }
+
+    // Добавляем несколько недоступных дат для теста
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const formattedTomorrow = tomorrow.toISOString().split("T")[0];
+
+    await this.db.run(
+      `
+            INSERT OR IGNORE INTO unavailable_dates (date, doctor_id, reason)
+            VALUES (?, ?, ?)
+        `,
+      [formattedTomorrow, 1, "Выходной"]
+    );
+
+    console.log("✅ Sample unavailable dates added");
+  }
+
   // Проверка доступности времени
   async isTimeSlotAvailable(doctorId, date, time) {
-    const unavailable = await this.db.get(
-      `
-            SELECT 1 FROM unavailable_dates 
-            WHERE date = ? AND (doctor_id IS NULL OR doctor_id = ?)
-        `,
-      [date, doctorId]
-    );
+    try {
+      // Проверяем недоступные даты
+      const unavailable = await this.db.get(
+        `
+                SELECT 1 FROM unavailable_dates 
+                WHERE date = ? AND (doctor_id IS NULL OR doctor_id = ?)
+            `,
+        [date, doctorId]
+      );
 
-    if (unavailable) return false;
+      if (unavailable) {
+        return false;
+      }
 
-    const booked = await this.db.get(
-      `
-            SELECT 1 FROM appointments 
-            WHERE doctor_id = ? AND date = ? AND time = ? AND status != 'cancelled'
-        `,
-      [doctorId, date, time]
-    );
+      // Проверяем занятые слоты
+      const booked = await this.db.get(
+        `
+                SELECT 1 FROM appointments 
+                WHERE doctor_id = ? AND date = ? AND time = ? AND status != 'cancelled'
+            `,
+        [doctorId, date, time]
+      );
 
-    return !booked;
+      return !booked;
+    } catch (error) {
+      console.error("Error checking time slot availability:", error);
+      return false;
+    }
   }
 
   // Создание записи
   async createAppointment(bookingData) {
-    const result = await this.db.run(
-      `
-            INSERT INTO appointments (
-                doctor_id, date, time, patient_name, patient_phone, patient_email,
-                patient_birthdate, is_mobile_patient, is_child, parent_name, parent_phone
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `,
-      [
-        bookingData.doctorId,
-        bookingData.date,
-        bookingData.time,
-        bookingData.patient.fullName,
-        bookingData.patient.phone,
-        bookingData.patient.email,
-        bookingData.patient.birthDate,
-        bookingData.patient.isMobilePatient ? 1 : 0,
-        bookingData.patient.isChild ? 1 : 0,
-        bookingData.parentInfo?.fullName || null,
-        bookingData.parentInfo?.phone || null,
-      ]
-    );
+    try {
+      const result = await this.db.run(
+        `
+                INSERT INTO appointments (
+                    doctor_id, date, time, patient_name, patient_phone, patient_email,
+                    patient_birthdate, is_mobile_patient, is_child, parent_name, parent_phone
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `,
+        [
+          bookingData.doctorId,
+          bookingData.date,
+          bookingData.time,
+          bookingData.patient.fullName,
+          bookingData.patient.phone,
+          bookingData.patient.email || null,
+          bookingData.patient.birthDate,
+          bookingData.patient.isMobilePatient ? 1 : 0,
+          bookingData.patient.isChild ? 1 : 0,
+          bookingData.parentInfo?.fullName || null,
+          bookingData.parentInfo?.phone || null,
+        ]
+      );
 
-    return result.lastID;
+      return result.lastID;
+    } catch (error) {
+      console.error("Error creating appointment:", error);
+      throw error;
+    }
   }
 
   // Получение занятых слотов для доктора на дату
   async getBookedSlots(doctorId, date) {
-    return await this.db.all(
-      `
-            SELECT time FROM appointments 
-            WHERE doctor_id = ? AND date = ? AND status != 'cancelled'
-        `,
-      [doctorId, date]
-    );
+    try {
+      return await this.db.all(
+        `
+                SELECT time FROM appointments 
+                WHERE doctor_id = ? AND date = ? AND status != 'cancelled'
+            `,
+        [doctorId, date]
+      );
+    } catch (error) {
+      console.error("Error getting booked slots:", error);
+      return [];
+    }
+  }
+
+  // Получение всех докторов
+  async getDoctors() {
+    try {
+      return await this.db.all("SELECT * FROM doctors");
+    } catch (error) {
+      console.error("Error getting doctors:", error);
+      return [];
+    }
+  }
+
+  // Получение записи по ID
+  async getAppointment(id) {
+    try {
+      return await this.db.get("SELECT * FROM appointments WHERE id = ?", [id]);
+    } catch (error) {
+      console.error("Error getting appointment:", error);
+      return null;
+    }
   }
 
   // Добавление недоступной даты
   async addUnavailableDate(date, doctorId = null, reason = "") {
-    await this.db.run(
-      `
-            INSERT INTO unavailable_dates (date, doctor_id, reason)
-            VALUES (?, ?, ?)
-        `,
-      [date, doctorId, reason]
-    );
+    try {
+      await this.db.run(
+        `
+                INSERT INTO unavailable_dates (date, doctor_id, reason)
+                VALUES (?, ?, ?)
+            `,
+        [date, doctorId, reason]
+      );
+    } catch (error) {
+      console.error("Error adding unavailable date:", error);
+      throw error;
+    }
+  }
+
+  // Получение недоступных дат
+  async getUnavailableDates(doctorId = null) {
+    try {
+      if (doctorId) {
+        return await this.db.all(
+          `
+                    SELECT * FROM unavailable_dates 
+                    WHERE doctor_id IS NULL OR doctor_id = ?
+                `,
+          [doctorId]
+        );
+      } else {
+        return await this.db.all("SELECT * FROM unavailable_dates");
+      }
+    } catch (error) {
+      console.error("Error getting unavailable dates:", error);
+      return [];
+    }
   }
 }
 
