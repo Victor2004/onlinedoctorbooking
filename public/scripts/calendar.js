@@ -240,7 +240,7 @@ function openBookingForm(date, time, doctorId) {
                         <div class="form-checkbox">
                             <label>
                                 <input type="checkbox" name="isMobilePatient" onchange="toggleMobilePatient(this)">
-                                Мобильный пациент (инвалид)
+                                Не мобильный пациент (инвалид)
                             </label>
                         </div>
                         
@@ -463,23 +463,24 @@ function generateCalendarHTML(doctorId = 1) {
   return `
     <div class="appointment-widget" data-doctor-id="${doctorId}">
         <!-- Выбор клиники -->
-        <button class="dropdown-button" onclick="toggleClinicDropdown()">
+        <!--<button class="dropdown-button" onclick="toggleClinicDropdown()">-->
+        <button class="dropdown-button" onclick="">
             <div class="clinic-info">
-                <div class="clinic-name">НЕБОЛИТ на Ленинском проспекте</div>
-                <div class="clinic-address">пр-кт Ленинский, д.66</div>
+                <div class="clinic-name">12 каб "Шаги к здоровью"</div>
+                <div class="clinic-address">155900, Ивановская область, г. Шуя площадь Фрунзе дом 6 Бизнес-центр</div>
             </div>
-            <svg class="dropdown-arrow" width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <!--<svg class="dropdown-arrow" width="10" height="10" viewBox="0 0 10 10" fill="none">
                 <path fill-rule="evenodd" clip-rule="evenodd" d="M5.01771 6.86347L8.43025 3.69806C8.7945 3.36018 9.37137 3.36594 9.72832 3.71103C10.0959 4.06634 10.0897 4.64424 9.71463 4.99214L5.66304 8.75033C5.30415 9.08322 4.73887 9.08253 4.38089 8.7524C4.37749 8.74936 4.3741 8.74629 4.37073 8.7432L0.288397 4.99086C-0.0894586 4.64355 -0.0970255 4.06347 0.271649 3.70706C0.627404 3.36314 1.20192 3.35613 1.56654 3.69127L5.01771 6.86347Z" fill="#9B9B9B"/>
-            </svg>
+            </svg>-->
         </button>
 
         <!-- Информация о клинике -->
         <div class="address-info">
-            <div class="metro-stations">
+            <!--<div class="metro-stations">
                 <div class="metro-station">Университет</div>
                 <div class="metro-station">Октябрьская</div>
-            </div>
-            <a href="https://www.google.com/maps/dir/?api=1&destination=55.6905518,37.5482292" 
+            </div>-->
+            <a href="" 
                target="_blank" class="map-link">На карте</a>
         </div>
 
