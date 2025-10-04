@@ -41,22 +41,17 @@ module.exports = (botData) => {
     const welcomeMessage = `
 👋 Привет, ${user.first_name}!
 
-🤖 Я Telegram бот с веб-панелью управления.
+🤖 Я Telegram бот буду
 
 📊 Доступные команды:
-/start - начать работу
-/help - помощь
-/stats - статистика бота
-/profile - информация о профиле
-
-🌐 Веб-панель: ${WEB_SERVER_URL}
-    `;
+/profile - информация о профиле`;
 
     await ctx.reply(welcomeMessage, {
       reply_markup: {
         keyboard: [
-          ["📊 Статистика", "👤 Профиль"],
-          ["🌐 Сайт", "ℹ️ Помощь"],
+          // ["📊 Статистика", "👤 Профиль"],
+          // ["🌐 Сайт", "ℹ️ Помощь"],
+          ["👤 Профиль"],
         ],
         resize_keyboard: true,
       },
@@ -64,46 +59,46 @@ module.exports = (botData) => {
   });
 
   // Обработка команды /help
-  bot.help(async (ctx) => {
-    const helpMessage = `
-📖 Помощь по боту:
+  //   bot.help(async (ctx) => {
+  //     const helpMessage = `
+  // 📖 Помощь по боту:
 
-Это демонстрационный Telegram бот с веб-интерфейсом.
+  // Это демонстрационный Telegram бот с веб-интерфейсом.
 
-🔧 Функции:
-• Отслеживание пользователей
-• Статистика в реальном времени
-• История сообщений
-• Веб-панель управления
+  // 🔧 Функции:
+  // • Отслеживание пользователей
+  // • Статистика в реальном времени
+  // • История сообщений
+  // • Веб-панель управления
 
-💻 Технологии:
-• Backend: Node.js + Express
-• Bot: Telegraf
-• Frontend: HTML/CSS/JS
-• Хранилище: In-memory
+  // 💻 Технологии:
+  // • Backend: Node.js + Express
+  // • Bot: Telegraf
+  // • Frontend: HTML/CSS/JS
+  // • Хранилище: In-memory
 
-🌐 Веб-сайт: ${WEB_SERVERURL}
-    `;
+  // 🌐 Веб-сайт: ${WEB_SERVERURL}
+  //     `;
 
-    await ctx.reply(helpMessage);
-  });
+  //     await ctx.reply(helpMessage);
+  //   });
 
   // Обработка команды /stats
-  bot.command("stats", async (ctx) => {
-    const userCount = botData.stats.totalUsers;
-    const messageCount = botData.stats.totalMessages;
+  //   bot.command("stats", async (ctx) => {
+  //     const userCount = botData.stats.totalUsers;
+  //     const messageCount = botData.stats.totalMessages;
 
-    const statsMessage = `
-📊 Статистика бота:
+  //     const statsMessage = `
+  // 📊 Статистика бота:
 
-👥 Всего пользователей: ${userCount}
-💬 Всего сообщений: ${messageCount}
-🆔 Ваш ID: ${ctx.from.id}
-🌐 Сайт: ${WEB_SERVER_URL}
-    `;
+  // 👥 Всего пользователей: ${userCount}
+  // 💬 Всего сообщений: ${messageCount}
+  // 🆔 Ваш ID: ${ctx.from.id}
+  // 🌐 Сайт: ${WEB_SERVER_URL}
+  //     `;
 
-    await ctx.reply(statsMessage);
-  });
+  //     await ctx.reply(statsMessage);
+  //   });
 
   // Обработка команды /profile
   bot.command("profile", async (ctx) => {
@@ -126,20 +121,20 @@ module.exports = (botData) => {
   });
 
   // Обработка команды /website
-  bot.command("website", async (ctx) => {
-    await ctx.reply(`🌐 Наш веб-сайт: ${WEB_SERVER_URL}`, {
-      reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text: "📱 Открыть сайт",
-              url: WEB_SERVER_URL,
-            },
-          ],
-        ],
-      },
-    });
-  });
+  // bot.command("website", async (ctx) => {
+  //   await ctx.reply(`🌐 Наш веб-сайт: ${WEB_SERVER_URL}`, {
+  //     reply_markup: {
+  //       inline_keyboard: [
+  //         [
+  //           {
+  //             text: "📱 Открыть сайт",
+  //             url: WEB_SERVER_URL,
+  //           },
+  //         ],
+  //       ],
+  //     },
+  //   });
+  // });
 
   // Обработка текстовых сообщений (кнопки)
   bot.hears("📊 Статистика", async (ctx) => {
@@ -183,7 +178,8 @@ module.exports = (botData) => {
     // });
 
     // Эхо-ответ
-    await ctx.reply(`🔁 Вы сказали: "${text}"`);
+    // await ctx.reply(`🔁 Вы сказали: "${text}"`);
+    await ctx.reply(`⚠️ Нет такой команды`);
   });
 
   // Обработка ошибок
@@ -198,21 +194,21 @@ module.exports = (botData) => {
       console.log("✅ Telegram bot started successfully!");
 
       // Обновляем статус бота
-      // sendBotEvent("bot_status", { status: "online" });
+      sendBotEvent("bot_status", { status: "online" });
     })
     .catch((err) => {
       console.error("❌ Error starting bot:", err);
-      // sendBotEvent("bot_status", { status: "error" });
+      sendBotEvent("bot_status", { status: "error" });
     });
 
   // Включить graceful stop
   process.once("SIGINT", () => {
     bot.stop("SIGINT");
-    // sendBotEvent("bot_status", { status: "offline" });
+    sendBotEvent("bot_status", { status: "offline" });
   });
   process.once("SIGTERM", () => {
     bot.stop("SIGTERM");
-    // sendBotEvent("bot_status", { status: "offline" });
+    sendBotEvent("bot_status", { status: "offline" });
   });
 
   return bot;
