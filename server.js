@@ -139,3 +139,65 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`🤖 Bot: Integrated in server`);
   console.log(`💾 Database: SQLite (database.sqlite)`);
 });
+
+// В конце server.js добавьте:
+const { Telegraf } = require("telegraf");
+
+// Инициализация бота
+async function initializeBot() {
+  try {
+    const token = process.env.TELEGRAM_BOT_TOKEN;
+
+    if (!token || token === "your_bot_token_here") {
+      console.log("⚠️  TELEGRAM_BOT_TOKEN not set, bot disabled");
+      return null;
+    }
+
+    const bot = new Telegraf(token);
+
+    // Проверяем бота
+    const botInfo = await bot.telegram.getMe();
+    console.log(
+      `✅ Telegram bot: ${botInfo.first_name} (@${botInfo.username})`
+    );
+
+    // Базовые команды
+    bot.start((ctx) => {
+      ctx.reply("🤖 Бот работает! Используйте /help для списка команд.");
+    });
+
+    bot.help((ctx) => {
+      ctx.reply(
+        "📖 Доступные команды:\n/start - начать\n/help - помощь\n/stats - статистика"
+      );
+    });
+
+    bot.command("stats", (ctx) => {
+      ctx.reply("📊 Статистика: Бот активен и работает!");
+    });
+
+    await bot.launch();
+    console.log("✅ Telegram bot started successfully");
+    return bot;
+  } catch (error) {
+    console.error("❌ Bot error:", error.message);
+    return null;
+  }
+}
+
+// Запуск бота при старте сервера
+let telegramBot = null;
+initializeBot().then((bot) => {
+  telegramBot = bot;
+});
+
+// Обновляем API info endpoint
+app.get("/api/info", (req, res) => {
+  res.json({
+    message: "Telegram Bot Dashboard API",
+    version: "1.0.0",
+    botStatus: telegramBot ? "online" : "offline",
+    website: "working",
+    endpoints: ["/api/doctors", "/api/availability", "/api/appointments"],
+  });
+});
