@@ -61,15 +61,17 @@ header {
 .doctor {
   max-width: 1066px;
   display: flex;
-  align-items: flex-start; /* Важно - выравнивание по верху */
-  gap: 30px; /* Расстояние между карточкой доктора и календарем */
+  align-items: flex-start;
+  gap: 30px;
+  justify-content: space-between;
+  width: 100%;
 }
 
 .doctor-card {
   display: flex;
-  flex: 0 0 auto; /* Запрещаем растягивание и сжатие */
-  max-width: 400px; /* Ограничиваем максимальную ширину */
-  min-width: 250px; /* Минимальная ширина */
+  flex: 0 0 auto;
+  max-width: 400px;
+  min-width: 250px;
   align-items: flex-start;
 }
 
@@ -129,10 +131,10 @@ header {
   background: #c6e1ee;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  flex: 1 1 auto; /* Занимает оставшееся пространство */
-  min-width: 300px; /* Минимальная ширина календаря */
-  max-width: 500px;
+  flex: 0 0 auto; /* Измените это - запрещаем растягивание */
+  width: 500px; /* Фиксированная ширина */
   margin: 0;
+  margin-left: auto;
 }
 
 .dropdown-button {
@@ -313,6 +315,7 @@ header {
     flex-direction: column;
     align-items: center;
     gap: 20px;
+    justify-content: flex-start;
   }
 
   .doctor-card {
@@ -322,7 +325,6 @@ header {
     text-align: center;
     margin-bottom: 0;
   }
-
   .avatar {
     margin: 0 auto 16px;
   }
@@ -330,6 +332,8 @@ header {
   .appointment-widget {
     max-width: 100%;
     width: 100%;
+    margin-left: 0;
+    flex: 1 1 auto;
   }
 }
 
