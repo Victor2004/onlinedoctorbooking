@@ -73,6 +73,18 @@ header {
   align-items: flex-start;
 }
 
+.avatar {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  display: block;
+
+  border: 1px solid rgb(210, 209, 209);
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgb(255, 255, 255);
+}
+
 .doctor-info {
   margin-bottom: 16px;
   display: flex;
@@ -88,7 +100,12 @@ header {
   overflow-wrap: break-word;
 }
 
-/* Убедимся, что текст не выходит за границы */
+.padding-line {
+  border-bottom: 1px solid rgb(210, 209, 209);
+  padding: 24px 0px;
+  margin: 0px auto;
+}
+
 .doctor-name {
   font-weight: bold;
   font-size: 18px;
@@ -306,6 +323,10 @@ header {
     margin-bottom: 0;
   }
 
+  .avatar {
+    margin: 0 auto 16px;
+  }
+
   .appointment-widget {
     max-width: 100%;
     width: 100%;
@@ -415,18 +436,6 @@ header {
   .clinic-address {
     font-size: 11px;
   }
-
-  .doctor {
-    gap: 15px;
-  }
-
-  .doctor-card {
-    min-width: auto;
-  }
-
-  .appointment-widget {
-    min-width: auto;
-  }
 }
 
 /* Дополнительные улучшения для лучшей адаптивности */
@@ -443,14 +452,11 @@ header {
 /* Для больших экранов (текущее поведение) */
 @media (min-width: 1025px) {
   .doctor {
-    flex-direction: row;
-    justify-content: space-between;
+    gap: 15px;
   }
 
   .doctor-card {
-    flex: 0 0 auto;
-    margin-right: 30px;
-    align-items: flex-start;
+    min-width: auto;
   }
 
   .avatar {
@@ -458,7 +464,6 @@ header {
   }
 
   .appointment-widget {
-    flex: 1;
-    max-width: 500px;
+    min-width: auto;
   }
 }
