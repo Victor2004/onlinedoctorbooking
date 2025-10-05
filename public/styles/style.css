@@ -132,9 +132,9 @@ header {
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   flex: 0 0 auto; /* Измените это - запрещаем растягивание */
-  width: 500px; /* Фиксированная ширина */
+  max-width: 500px; /* Фиксированная ширина */
   margin: 0;
-  margin-left: auto;
+  margin-right: auto;
 }
 
 .dropdown-button {
