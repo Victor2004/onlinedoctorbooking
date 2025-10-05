@@ -61,23 +61,16 @@ header {
 .doctor {
   max-width: 1066px;
   display: flex;
+  align-items: flex-start; /* Важно - выравнивание по верху */
+  gap: 30px; /* Расстояние между карточкой доктора и календарем */
 }
 
 .doctor-card {
   display: flex;
-  flex: 1 1 0%;
-}
-
-.avatar {
-  width: 96px;
-  height: 96px;
-  object-fit: cover;
-  display: block;
-
-  border: 1px solid rgb(210, 209, 209);
-  border-radius: 50%;
-  overflow: hidden;
-  background: rgb(255, 255, 255);
+  flex: 0 0 auto; /* Запрещаем растягивание и сжатие */
+  max-width: 400px; /* Ограничиваем максимальную ширину */
+  min-width: 250px; /* Минимальная ширина */
+  align-items: flex-start;
 }
 
 .doctor-info {
@@ -85,27 +78,24 @@ header {
   display: flex;
   align-items: flex-start;
   flex: 1 1 0%;
-
   display: block;
   margin: -8px;
   padding: 8px;
   text-decoration: none;
   border-radius: 8px;
   transition: background-color 0.1s linear;
+  word-wrap: break-word; /* Перенос длинных слов */
+  overflow-wrap: break-word;
 }
 
-.padding-line {
-  border-bottom: 1px solid rgb(210, 209, 209);
-  padding: 24px 0px;
-  margin: 0px auto;
-}
-
+/* Убедимся, что текст не выходит за границы */
 .doctor-name {
   font-weight: bold;
   font-size: 18px;
   line-height: 20px;
   color: rgb(0, 0, 0);
   margin: 0px;
+  word-break: break-word; /* Перенос длинных имен */
 }
 
 .specialty {
@@ -115,15 +105,17 @@ header {
   line-height: 18px;
   color: rgb(0, 0, 0);
   margin: 0px;
+  word-break: break-word; /* Перенос длинных специальностей */
 }
 
 .appointment-widget {
   background: #c6e1ee;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  flex: 1 1 auto; /* Занимает оставшееся пространство */
+  min-width: 300px; /* Минимальная ширина календаря */
   max-width: 500px;
-  margin: 0 auto;
-  overflow: hidden;
+  margin: 0;
 }
 
 .dropdown-button {
@@ -298,21 +290,20 @@ header {
   font-weight: 600;
 }
 
-/* Для планшетов и мобильных устройств (до 1024px) */
+/* Для мобильных устройств */
 @media (max-width: 1024px) {
   .doctor {
     flex-direction: column;
     align-items: center;
+    gap: 20px;
   }
 
   .doctor-card {
+    max-width: 100%;
+    min-width: auto;
     flex-direction: column;
     text-align: center;
-    margin-bottom: 20px;
-  }
-
-  .avatar {
-    margin: 0 auto 16px;
+    margin-bottom: 0;
   }
 
   .appointment-widget {
@@ -423,6 +414,18 @@ header {
 
   .clinic-address {
     font-size: 11px;
+  }
+
+  .doctor {
+    gap: 15px;
+  }
+
+  .doctor-card {
+    min-width: auto;
+  }
+
+  .appointment-widget {
+    min-width: auto;
   }
 }
 
