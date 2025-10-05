@@ -134,7 +134,7 @@ header {
   flex: 0 0 auto; /* Измените это - запрещаем растягивание */
   max-width: 500px; /* Фиксированная ширина */
   margin: 0;
-  margin-right: auto;
+  /* margin-right: auto; */
 }
 
 .dropdown-button {
