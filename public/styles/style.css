@@ -62,17 +62,17 @@ header {
   max-width: 1066px;
   display: flex;
   align-items: flex-start;
-  gap: 30px;
-  justify-content: space-between;
+  justify-content: space-between; /* Распределяет пространство между элементами */
   width: 100%;
+  gap: 20px; /* Минимальное расстояние между элементами */
 }
 
 .doctor-card {
   display: flex;
-  flex: 0 0 auto;
-  max-width: 400px;
-  min-width: 250px;
+  flex: 0 1 auto; /* Может сжиматься, но не растягивается */
   align-items: flex-start;
+  max-width: none; /* Убираем ограничение */
+  min-width: auto;
 }
 
 .avatar {
@@ -91,15 +91,18 @@ header {
   margin-bottom: 16px;
   display: flex;
   align-items: flex-start;
-  flex: 1 1 0%;
+  flex: 1 1 auto; /* Занимает необходимое пространство */
   display: block;
   margin: -8px;
   padding: 8px;
   text-decoration: none;
   border-radius: 8px;
   transition: background-color 0.1s linear;
-  word-wrap: break-word; /* Перенос длинных слов */
+  word-wrap: break-word;
   overflow-wrap: break-word;
+  /* Убираем все ограничения по ширине */
+  max-width: none;
+  min-width: auto;
 }
 
 .padding-line {
@@ -131,10 +134,10 @@ header {
   background: #c6e1ee;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  flex: 0 0 auto; /* Измените это - запрещаем растягивание */
-  max-width: 500px; /* Фиксированная ширина */
+  flex: 0 0 auto; /* Не растягивается и не сжимается */
+  width: 500px; /* Фиксированная ширина */
   margin: 0;
-  margin-right: auto;
+  margin-left: 20px; /* Добавляем отступ слева */
 }
 
 .dropdown-button {
@@ -320,20 +323,25 @@ header {
 
   .doctor-card {
     max-width: 100%;
-    min-width: auto;
     flex-direction: column;
     text-align: center;
     margin-bottom: 0;
+    flex: 0 0 auto;
   }
-  .avatar {
-    margin: 0 auto 16px;
+
+  .doctor-info {
+    flex: 0 0 auto;
   }
 
   .appointment-widget {
     max-width: 100%;
     width: 100%;
     margin-left: 0;
-    flex: 1 1 auto;
+    flex: 0 0 auto;
+  }
+
+  .avatar {
+    margin: 0 auto 16px;
   }
 }
 
