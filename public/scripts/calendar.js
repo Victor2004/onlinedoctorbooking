@@ -498,7 +498,7 @@ function generateCalendarHTML(doctorId = 1) {
     tomorrow
   )}</time>
             </button>
-            <button class="day-button disabled">
+            <button class="day-button" onclick="selectDay(this, ${doctorId})">
                 <time class="day-name">${getDayName(dayAfterTomorrow)}</time>
                 <time class="date-full">${dayAfterTomorrow.getDate()} ${getShortMonthName(
     dayAfterTomorrow
