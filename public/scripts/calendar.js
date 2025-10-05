@@ -519,4 +519,4 @@ function generateCalendarHTML(doctorId = 1) {
 }
 
 // Глобальная переменная для календаря
-const calendarHTML = generateCalendarHTML();
+// const calendarHTML = generateCalendarHTML();

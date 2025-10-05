@@ -116,3 +116,341 @@ header {
   color: rgb(0, 0, 0);
   margin: 0px;
 }
+
+.appointment-widget {
+  background: #c6e1ee;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.dropdown-button {
+  width: 100%;
+  padding: 16px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid #e0e0e0;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.clinic-info {
+  flex: 1;
+}
+
+.clinic-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.clinic-address {
+  font-size: 14px;
+  color: #666;
+}
+
+.dropdown-arrow {
+  width: 10px;
+  height: 10px;
+  transition: transform 0.3s;
+}
+
+.address-info {
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.metro-stations {
+  display: flex;
+  gap: 12px;
+}
+
+.metro-station {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: #666;
+}
+
+.metro-station::before {
+  content: "●";
+  color: #1585bb;
+  font-size: 8px;
+}
+
+.map-link {
+  color: #1585bb;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.map-link:hover {
+  text-decoration: underline;
+}
+
+.day-grid {
+  padding: 16px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.day-button {
+  padding: 12px 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  min-width: 100px;
+  text-align: center;
+  transition: all 0.3s;
+}
+
+.day-button:hover {
+  border-color: #1585bb;
+  background: #f8f9ff;
+}
+
+.day-button.selected {
+  background: #1585bb;
+  color: white;
+  border-color: #1585bb;
+}
+
+.day-button.disabled {
+  background: #f5f5f5;
+  color: #999;
+  cursor: not-allowed;
+  border-color: #e0e0e0;
+}
+
+.day-button.disabled:hover {
+  border-color: #e0e0e0;
+  background: #f5f5f5;
+}
+
+.calendar-button {
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  min-width: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.calendar-icon {
+  width: 16px;
+  height: 16px;
+  color: #666;
+}
+
+.time-grid {
+  padding: 16px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.time-button {
+  padding: 12px 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  color: #1585bb;
+  text-decoration: none;
+  font-size: 14px;
+  transition: all 0.3s;
+  display: inline-block;
+}
+
+.time-button:hover {
+  background: #1585bb;
+  color: white;
+  border-color: #1585bb;
+}
+
+.day-button time {
+  display: block;
+}
+
+.day-name {
+  font-size: 12px;
+  color: inherit;
+  opacity: 0.8;
+}
+
+.date-full {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Для планшетов и мобильных устройств (до 1024px) */
+@media (max-width: 1024px) {
+  .doctor {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .doctor-card {
+    flex-direction: column;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .avatar {
+    margin: 0 auto 16px;
+  }
+
+  .appointment-widget {
+    max-width: 100%;
+    width: 100%;
+  }
+}
+
+/* Для мобильных устройств (до 768px) */
+@media (max-width: 768px) {
+  .container {
+    padding: 10px;
+  }
+
+  header {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+
+  .logo {
+    height: 50px;
+  }
+
+  .doctor {
+    max-width: 100%;
+  }
+
+  .doctor-info {
+    margin: 0;
+    padding: 0;
+  }
+
+  .doctor-name {
+    font-size: 16px;
+  }
+
+  .specialty {
+    font-size: 13px;
+  }
+
+  .day-grid {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .day-button {
+    min-width: 80px;
+    padding: 10px 12px;
+    flex: 1;
+    max-width: 100px;
+  }
+
+  .time-grid {
+    justify-content: center;
+  }
+
+  .time-button {
+    flex: 1 0 calc(33.333% - 8px);
+    max-width: calc(33.333% - 8px);
+    text-align: center;
+    padding: 10px 8px;
+  }
+
+  .address-info {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .clinic-address {
+    font-size: 12px;
+  }
+}
+
+/* Для очень маленьких экранов (до 480px) */
+@media (max-width: 480px) {
+  .avatar {
+    width: 80px;
+    height: 80px;
+  }
+
+  .day-button {
+    min-width: 70px;
+    padding: 8px 10px;
+  }
+
+  .time-button {
+    flex: 1 0 calc(50% - 8px);
+    max-width: calc(50% - 8px);
+    font-size: 13px;
+    padding: 8px 6px;
+  }
+
+  .dropdown-button {
+    padding: 12px;
+  }
+
+  .address-info,
+  .day-grid,
+  .time-grid {
+    padding: 12px;
+  }
+
+  .clinic-name {
+    font-size: 14px;
+  }
+
+  .clinic-address {
+    font-size: 11px;
+  }
+}
+
+/* Дополнительные улучшения для лучшей адаптивности */
+.doctor {
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.appointment-widget {
+  flex: 1;
+  min-width: 300px;
+}
+
+/* Для больших экранов (текущее поведение) */
+@media (min-width: 1025px) {
+  .doctor {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .doctor-card {
+    flex: 0 0 auto;
+    margin-right: 30px;
+  }
+
+  .appointment-widget {
+    flex: 1;
+    max-width: 500px;
+  }
+}

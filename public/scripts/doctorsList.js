@@ -14,20 +14,24 @@ function doctorsMain(doctors) {
 
   // Функция для отображения списка докторов
   function showAllDoctors() {
+    listDoctors.innerHTML = "";
+
     doctors.forEach((doctor) => {
       const doctorHTML = `
-              <article class="padding-line">
-                <div class="doctor">
-                  <div class="doctor-card">
-                    <img class="avatar" src="media/doctors/${doctor.avatar}" />
-                    <div class="doctor-info">
-                      <h2 class="doctor-name">${doctor.name}</h2>
-                      <p class="specialty">${doctor.specialty}</p>
-                    </div>
-                  </div>
-                  ${calendarHTML}
-                </div>
-              </article>`;
+      <article class="padding-line">
+        <div class="doctor">
+          <div class="doctor-card">
+            <img class="avatar" src="media/doctors/${doctor.avatar}" alt="${
+        doctor.name
+      }" />
+            <div class="doctor-info">
+              <h2 class="doctor-name">${doctor.name}</h2>
+              <p class="specialty">${doctor.specialty}</p>
+            </div>
+          </div>
+          ${generateCalendarHTML(doctor.id)}
+        </div>
+      </article>`;
 
       listDoctors.innerHTML += doctorHTML;
     });
