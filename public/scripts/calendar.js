@@ -480,7 +480,7 @@ function generateCalendarHTML(doctorId = 1) {
                 <div class="metro-station">Университет</div>
                 <div class="metro-station">Октябрьская</div>
             </div>-->
-            <a href="" 
+            <a href="https://yandex.ru/maps/-/CLRyAT22" 
                target="_blank" class="map-link">На карте</a>
         </div>
 
