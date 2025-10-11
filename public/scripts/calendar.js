@@ -193,8 +193,8 @@ function openBookingForm(date, time, doctorId) {
   closeBookingForm();
 
   const formHTML = `
-        <div class="modal-overlay" id="bookingModal">
-            <div class="modal-content">
+        <div class="modal-overlay" id="bookingModal" onclick="handleOverlayClick(event)">
+            <div class="modal-content" onclick="event.stopPropagation()">
                 <div class="modal-header">
                     <h2>Запись на прием</h2>
                     <button class="close-button" onclick="closeBookingForm()">×</button>
@@ -286,6 +286,9 @@ function openBookingForm(date, time, doctorId) {
   document
     .getElementById("bookingForm")
     .addEventListener("submit", handleBookingSubmit);
+
+  // Обработчик клавиши Escape
+  document.addEventListener("keydown", handleEscapeKey);
 }
 
 // Форматирование даты для отображения
@@ -322,10 +325,29 @@ function toggleMobilePatient(checkbox) {
   console.log("Мобильный пациент:", checkbox.checked);
 }
 
-// Закрытие формы
+// Обработчик клика по overlay
+function handleOverlayClick(event) {
+  // Закрываем окно только если кликнули именно на overlay (не на content)
+  if (event.target.id === "bookingModal") {
+    closeBookingForm();
+  }
+}
+
+// Обработчик клавиши Escape
+function handleEscapeKey(event) {
+  if (event.key === "Escape") {
+    closeBookingForm();
+  }
+}
+
+// Функция закрытия формы
 function closeBookingForm() {
   const modal = document.getElementById("bookingModal");
-  if (modal) modal.remove();
+  if (modal) {
+    modal.remove();
+    // Удаляем обработчик клавиши Escape
+    document.removeEventListener("keydown", handleEscapeKey);
+  }
 }
 
 // Обработчик отправки формы

@@ -163,6 +163,9 @@ header {
 
 .clinic-info {
   flex: 1;
+  background-color: var(--background-color);
+  border-radius: 8px;
+  padding: 10px;
 }
 
 .clinic-name {
