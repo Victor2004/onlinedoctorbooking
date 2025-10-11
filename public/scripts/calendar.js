@@ -219,15 +219,14 @@ function openBookingForm(date, time, doctorId) {
                             <input type="text" name="fullName" required placeholder="Иванов Иван Иванович">
                         </div>
                         
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Телефон *</label>
-                                <input type="tel" name="phone" required placeholder="+7 (912) 345-67-89">
-                            </div>
-                            <div class="form-group">
-                                <label>Email</label>
-                                <input type="email" name="email" placeholder="example@mail.ru">
-                            </div>
+                        <div class="form-group">
+                            <label>Телефон *</label>
+                            <input type="tel" name="phone" required placeholder="+7 (912) 345-67-89">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" name="email" placeholder="example@mail.ru">
                         </div>
                         
                         <div class="form-group">
@@ -480,7 +479,7 @@ function generateCalendarHTML(doctorId = 1) {
                 <div class="metro-station">Университет</div>
                 <div class="metro-station">Октябрьская</div>
             </div>-->
-            <a href="https://yandex.ru/maps/-/CLRyAT22" 
+            <a href="https://yandex.ru/maps/-/CLRyAT22"
                target="_blank" class="map-link">На карте</a>
         </div>
 

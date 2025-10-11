@@ -105,7 +105,7 @@
 }
 
 .btn-submit {
-  background: #007bff;
+  background: var(--primary-blue);
   color: white;
 }
 
