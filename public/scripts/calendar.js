@@ -94,6 +94,8 @@ function isPastDate(date) {
 function isPastTime(date, timeString) {
   const now = new Date();
   const [hours, minutes] = timeString.split(":").map(Number);
+
+  // Создаем дату слота с правильным временем
   const slotDateTime = new Date(date);
   slotDateTime.setHours(hours, minutes, 0, 0);
 
@@ -136,7 +138,6 @@ function openCalendar() {
 }
 
 // Обновление доступных временных слотов
-// Обновление доступных временных слотов
 async function updateTimeSlots(selectedDate, doctorId, widgetElement) {
   let timeGrid;
 
@@ -176,7 +177,7 @@ async function updateTimeSlots(selectedDate, doctorId, widgetElement) {
     // Генерируем кнопки времени с проверкой занятости и прошедшего времени
     let timeButtons = "";
     const step = 15;
-    const breakStart = 12.4; // 12:30
+    const breakStart = 12.5; // 12:30
     const breakEnd = 14; // 14:00
 
     for (let decimalHour = 9; decimalHour <= 17; decimalHour += 0.25) {
@@ -412,6 +413,17 @@ function closeBookingForm() {
     modal.remove();
     // Удаляем обработчик клавиши Escape
     document.removeEventListener("keydown", handleEscapeKey);
+
+    // ОБНОВЛЯЕМ ДОСТУПНОЕ ВРЕМЯ ПОСЛЕ ЗАКРЫТИЯ ФОРМЫ
+    if (currentSelectedDate && currentDoctorId) {
+      const formattedDate = formatDateForAPI(currentSelectedDate);
+      const widget = document.querySelector(
+        `[data-doctor-id="${currentDoctorId}"]`
+      );
+      if (widget) {
+        updateTimeSlots(formattedDate, currentDoctorId, widget);
+      }
+    }
   }
 }
 
@@ -463,12 +475,20 @@ async function handleBookingSubmit(event) {
     if (result.success) {
       console.log("Запись успешно создана!");
       console.log(bookingData);
+
+      // Закрываем форму
       closeBookingForm();
 
-      // Обновляем календарь если есть выбранная дата
+      // ОБНОВЛЯЕМ ДОСТУПНОЕ ВРЕМЯ ПОСЛЕ УСПЕШНОЙ ЗАПИСИ
+      // (это произойдет автоматически в closeBookingForm, но можно и явно обновить)
       if (currentSelectedDate && currentDoctorId) {
         const formattedDate = formatDateForAPI(currentSelectedDate);
-        updateTimeSlots(formattedDate, currentDoctorId);
+        const widget = document.querySelector(
+          `[data-doctor-id="${currentDoctorId}"]`
+        );
+        if (widget) {
+          updateTimeSlots(formattedDate, currentDoctorId, widget);
+        }
       }
     } else {
       console.log("Ошибка при создании записи");
@@ -476,8 +496,18 @@ async function handleBookingSubmit(event) {
       throw new Error(result.error || "Ошибка при создании записи");
     }
   } catch (error) {
-    // showErrorMessage(error.message);
     alert("Ошибка: " + error.message);
+
+    // ОБНОВЛЯЕМ ДОСТУПНОЕ ВРЕМЯ ПРИ ОШИБКЕ (например, если время уже занято)
+    if (currentSelectedDate && currentDoctorId) {
+      const formattedDate = formatDateForAPI(currentSelectedDate);
+      const widget = document.querySelector(
+        `[data-doctor-id="${currentDoctorId}"]`
+      );
+      if (widget) {
+        updateTimeSlots(formattedDate, currentDoctorId, widget);
+      }
+    }
   } finally {
     submitButton.textContent = originalText;
     submitButton.disabled = false;
