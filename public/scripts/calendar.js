@@ -397,7 +397,7 @@ async function handleBookingSubmit(event) {
 
     if (result.success) {
       console.log("Запись успешно создана!");
-      console.log(result);
+      console.log(bookingData);
       closeBookingForm();
 
       // Обновляем календарь если есть выбранная дата
