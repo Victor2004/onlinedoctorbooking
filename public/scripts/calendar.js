@@ -44,7 +44,7 @@ function formatDateForAPI(date) {
 }
 
 // Получение даты из текста (например: "15 янв.")
-function parseDateFromText(dateText, baseDate = today) {
+function parseDateFromText(dateText, baseDate = new Date()) {
   const [day, monthText] = dateText.split(" ");
   const monthNames = [
     "янв.",
@@ -64,8 +64,9 @@ function parseDateFromText(dateText, baseDate = today) {
 
   if (monthIndex !== -1) {
     const year = baseDate.getFullYear();
-    // Если месяц уже прошел в этом году, берем следующий год
     const targetDate = new Date(year, monthIndex, parseInt(day));
+
+    // Если дата в прошлом относительно базовой даты, берем следующий год
     if (targetDate < baseDate) {
       targetDate.setFullYear(year + 1);
     }
@@ -77,11 +78,39 @@ function parseDateFromText(dateText, baseDate = today) {
 let currentDoctorId = null;
 let currentSelectedDate = null;
 
+// ДОДЕЛАТЬ ФУНКЦИЮ!
 function toggleClinicDropdown() {
   alert("Здесь будет открыт список клиник");
 }
 
+// Проверка является ли дата прошедшей
+function isPastDate(date) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Сбрасываем время для сравнения только дат
+  return date < today;
+}
+
+// Проверка является ли временной слот прошедшим
+function isPastTime(date, timeString) {
+  const now = new Date();
+  const [hours, minutes] = timeString.split(":").map(Number);
+  const slotDateTime = new Date(date);
+  slotDateTime.setHours(hours, minutes, 0, 0);
+
+  return slotDateTime < now;
+}
+
+// Обновляем функцию selectDay с проверкой прошедших дат
 function selectDay(button, doctorId) {
+  // Проверяем, не является ли дата прошедшей
+  const dateText = button.querySelector(".date-full").textContent;
+  const selectedDate = parseDateFromText(dateText);
+
+  if (isPastDate(selectedDate)) {
+    // Не позволяем выбирать прошедшие даты
+    return;
+  }
+
   // Убираем выделение со всех кнопок в этом виджете
   const widget = button.closest(".appointment-widget");
   if (widget) {
@@ -95,8 +124,7 @@ function selectDay(button, doctorId) {
 
   // Сохраняем текущего доктора и дату
   currentDoctorId = doctorId;
-  const dateText = button.querySelector(".date-full").textContent;
-  currentSelectedDate = parseDateFromText(dateText);
+  currentSelectedDate = selectedDate;
   const formattedDate = formatDateForAPI(currentSelectedDate);
 
   // Загружаем доступное время для выбранной даты
@@ -112,10 +140,8 @@ async function updateTimeSlots(selectedDate, doctorId, widgetElement) {
   let timeGrid;
 
   if (widgetElement) {
-    // Если передан конкретный виджет, ищем time-grid внутри него
     timeGrid = widgetElement.querySelector(".time-grid");
   } else {
-    // Иначе используем общий поиск (для обратной совместимости)
     timeGrid = document.querySelector(".time-grid");
   }
 
@@ -142,10 +168,14 @@ async function updateTimeSlots(selectedDate, doctorId, widgetElement) {
       ? data.bookedSlots.map((slot) => slot.time)
       : [];
 
-    // Генерируем кнопки времени с проверкой занятости
+    // Проверяем, является ли выбранная дата сегодняшним днем
+    const today = new Date();
+    const isToday = selectedDate === formatDateForAPI(today);
+
+    // Генерируем кнопки времени с проверкой занятости и прошедшего времени
     let timeButtons = "";
     const step = 15;
-    const breakStart = 12.5; // 12:30
+    const breakStart = 12.4; // ДО 12:30 (включительно)
     const breakEnd = 14; // 14:00
 
     for (let decimalHour = 9; decimalHour <= 17; decimalHour += 0.25) {
@@ -160,13 +190,19 @@ async function updateTimeSlots(selectedDate, doctorId, widgetElement) {
         .toString()
         .padStart(2, "0")}`;
 
-      // Проверяем, занят ли слот
+      // Проверяем, занят ли слот в БД
       const isBooked = bookedSlots.includes(timeString);
-      const buttonClass = isBooked ? "time-button disabled" : "time-button";
+
+      // Проверяем, не является ли время прошедшим (только для сегодняшнего дня)
+      const isPast = isToday && isPastTime(new Date(selectedDate), timeString);
+
+      // Слот недоступен если занят или прошел
+      const isDisabled = isBooked || isPast;
+      const buttonClass = isDisabled ? "time-button disabled" : "time-button";
 
       timeButtons += `<button class="${buttonClass}" 
                     ${
-                      isBooked
+                      isDisabled
                         ? "disabled"
                         : `onclick="openBookingForm('${selectedDate}', '${timeString}', ${doctorId})"`
                     }>
@@ -176,7 +212,6 @@ async function updateTimeSlots(selectedDate, doctorId, widgetElement) {
 
     timeGrid.innerHTML = timeButtons;
 
-    // Если нет доступного времени, показываем сообщение
     if (timeButtons === "") {
       timeGrid.innerHTML = "<p>Нет доступного времени</p>";
     }
@@ -480,67 +515,106 @@ async function saveAppointment(bookingData) {
 // Инициализация календаря при загрузке
 // Обновляем инициализацию для правильной работы с несколькими врачами
 document.addEventListener("DOMContentLoaded", function () {
-  // Для каждого виджета записи выбираем первый доступный день
-  document.querySelectorAll(".appointment-widget").forEach((widget) => {
-    const firstAvailableDay = widget.querySelector(
-      ".day-button:not(.disabled)"
-    );
-    if (firstAvailableDay) {
-      firstAvailableDay.classList.add("selected");
-
-      const doctorId = widget.dataset.doctorId || 1;
-      const dateText =
-        firstAvailableDay.querySelector(".date-full").textContent;
-      const selectedDate = parseDateFromText(dateText);
-      const formattedDate = formatDateForAPI(selectedDate);
-
-      // Загружаем доступное время для этого виджета
-      updateTimeSlots(formattedDate, doctorId, widget);
-    }
-  });
+  // Ждем немного чтобы все виджеты успели отрендериться
+  setTimeout(() => {
+    document.querySelectorAll(".appointment-widget").forEach((widget) => {
+      // Выбираем первую доступную (не прошедшую) дату
+      const firstAvailableDay = widget.querySelector(
+        ".day-button:not(.disabled)"
+      );
+      if (firstAvailableDay) {
+        const doctorId = widget.dataset.doctorId;
+        selectDay(firstAvailableDay, doctorId);
+      } else {
+        // Если все даты прошедшие, показываем сообщение
+        const timeGrid = widget.querySelector(".time-grid");
+        if (timeGrid) {
+          timeGrid.innerHTML = "<p>Нет доступных дат для записи</p>";
+        }
+      }
+    });
+  }, 100);
 });
 
 // Генерация HTML календаря для доктора
 function generateCalendarHTML(doctorId) {
+  // Проверяем, какие даты являются прошедшими
+  const today = new Date();
+  const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+  const dayAfterTomorrow = new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000);
+
+  const isTodayPast = isPastDate(today);
+  const isTomorrowPast = isPastDate(tomorrow);
+  const isDayAfterTomorrowPast = isPastDate(dayAfterTomorrow);
+
+  // Определяем, какая дата должна быть выбрана по умолчанию (первая доступная)
+  let defaultSelectedDate = null;
+  if (!isTodayPast) {
+    defaultSelectedDate = today;
+  } else if (!isTomorrowPast) {
+    defaultSelectedDate = tomorrow;
+  } else if (!isDayAfterTomorrowPast) {
+    defaultSelectedDate = dayAfterTomorrow;
+  }
+
   return `
     <div class="appointment-widget" data-doctor-id="${doctorId}">
-        <!-- Выбор клиники -->
-        <!--<button class="dropdown-button" onclick="toggleClinicDropdown()">-->
-        <button class="dropdown-button" onclick="">
+        <button class="dropdown-button">
             <div class="clinic-info">
                 <div class="clinic-name">12 каб "Шаги к здоровью"</div>
                 <div class="clinic-address">155900, Ивановская область, г. Шуя площадь Фрунзе дом 6 Бизнес-центр</div>
             </div>
-            <!--<svg class="dropdown-arrow" width="10" height="10" viewBox="0 0 10 10" fill="none">
-                <path fill-rule="evenodd" clip-rule="evenodd" d="M5.01771 6.86347L8.43025 3.69806C8.7945 3.36018 9.37137 3.36594 9.72832 3.71103C10.0959 4.06634 10.0897 4.64424 9.71463 4.99214L5.66304 8.75033C5.30415 9.08322 4.73887 9.08253 4.38089 8.7524C4.37749 8.74936 4.3741 8.74629 4.37073 8.7432L0.288397 4.99086C-0.0894586 4.64355 -0.0970255 4.06347 0.271649 3.70706C0.627404 3.36314 1.20192 3.35613 1.56654 3.69127L5.01771 6.86347Z" fill="#9B9B9B"/>
-            </svg>-->
         </button>
 
-        <!-- Информация о клинике -->
         <div class="address-info">
-            <!--<div class="metro-stations">
-                <div class="metro-station">Университет</div>
-                <div class="metro-station">Октябрьская</div>
-            </div>-->
             <a href="https://yandex.ru/maps/-/CLRyAT22"
                target="_blank" class="map-link">На карте</a>
         </div>
 
         <!-- Выбор дня -->
         <div class="day-grid">
-            <button class="day-button selected" onclick="selectDay(this, ${doctorId})">
+            <button class="day-button ${
+              !isTodayPast && defaultSelectedDate?.getDate() === today.getDate()
+                ? "selected"
+                : ""
+            } ${isTodayPast ? "disabled" : ""}" 
+                ${
+                  isTodayPast
+                    ? "disabled"
+                    : `onclick="selectDay(this, ${doctorId})"`
+                }>
                 <time class="day-name">${getDayName(today)}</time>
                 <time class="date-full">${today.getDate()} ${getShortMonthName(
     today
   )}</time>
             </button>
-            <button class="day-button" onclick="selectDay(this, ${doctorId})">
+            <button class="day-button ${
+              !isTomorrowPast &&
+              defaultSelectedDate?.getDate() === tomorrow.getDate()
+                ? "selected"
+                : ""
+            } ${isTomorrowPast ? "disabled" : ""}" 
+                ${
+                  isTomorrowPast
+                    ? "disabled"
+                    : `onclick="selectDay(this, ${doctorId})"`
+                }>
                 <time class="day-name">${getDayName(tomorrow)}</time>
                 <time class="date-full">${tomorrow.getDate()} ${getShortMonthName(
     tomorrow
   )}</time>
             </button>
-            <button class="day-button" onclick="selectDay(this, ${doctorId})">
+            <button class="day-button ${
+              !isDayAfterTomorrowPast &&
+              defaultSelectedDate?.getDate() === dayAfterTomorrow.getDate()
+                ? "selected"
+                : ""
+            } ${isDayAfterTomorrowPast ? "disabled" : ""}" 
+                ${
+                  isDayAfterTomorrowPast
+                    ? "disabled"
+                    : `onclick="selectDay(this, ${doctorId})"`
+                }>
                 <time class="day-name">${getDayName(dayAfterTomorrow)}</time>
                 <time class="date-full">${dayAfterTomorrow.getDate()} ${getShortMonthName(
     dayAfterTomorrow
