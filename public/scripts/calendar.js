@@ -413,17 +413,6 @@ function closeBookingForm() {
     modal.remove();
     // Удаляем обработчик клавиши Escape
     document.removeEventListener("keydown", handleEscapeKey);
-
-    // ОБНОВЛЯЕМ ДОСТУПНОЕ ВРЕМЯ ПОСЛЕ ЗАКРЫТИЯ ФОРМЫ
-    if (currentSelectedDate && currentDoctorId) {
-      const formattedDate = formatDateForAPI(currentSelectedDate);
-      const widget = document.querySelector(
-        `[data-doctor-id="${currentDoctorId}"]`
-      );
-      if (widget) {
-        updateTimeSlots(formattedDate, currentDoctorId, widget);
-      }
-    }
   }
 }
 
@@ -479,17 +468,12 @@ async function handleBookingSubmit(event) {
       // Закрываем форму
       closeBookingForm();
 
-      // ОБНОВЛЯЕМ ДОСТУПНОЕ ВРЕМЯ ПОСЛЕ УСПЕШНОЙ ЗАПИСИ
-      // (это произойдет автоматически в closeBookingForm, но можно и явно обновить)
-      if (currentSelectedDate && currentDoctorId) {
-        const formattedDate = formatDateForAPI(currentSelectedDate);
-        const widget = document.querySelector(
-          `[data-doctor-id="${currentDoctorId}"]`
-        );
-        if (widget) {
-          updateTimeSlots(formattedDate, currentDoctorId, widget);
-        }
-      }
+      // ПРОСТАЯ ПЕРЕЗАГРУЗКА СТРАНИЦЫ ПОСЛЕ УСПЕШНОЙ ЗАПИСИ
+      // alert("Запись успешно создана! Страница будет перезагружена.");
+      // location.reload();
+      setTimeout(() => {
+        location.reload();
+      }, 1500); // Перезагрузка через 1.5 секунды
     } else {
       console.log("Ошибка при создании записи");
       console.log(result.error);
@@ -497,17 +481,6 @@ async function handleBookingSubmit(event) {
     }
   } catch (error) {
     alert("Ошибка: " + error.message);
-
-    // ОБНОВЛЯЕМ ДОСТУПНОЕ ВРЕМЯ ПРИ ОШИБКЕ (например, если время уже занято)
-    if (currentSelectedDate && currentDoctorId) {
-      const formattedDate = formatDateForAPI(currentSelectedDate);
-      const widget = document.querySelector(
-        `[data-doctor-id="${currentDoctorId}"]`
-      );
-      if (widget) {
-        updateTimeSlots(formattedDate, currentDoctorId, widget);
-      }
-    }
   } finally {
     submitButton.textContent = originalText;
     submitButton.disabled = false;
