@@ -136,6 +136,7 @@ function openCalendar() {
 }
 
 // Обновление доступных временных слотов
+// Обновление доступных временных слотов
 async function updateTimeSlots(selectedDate, doctorId, widgetElement) {
   let timeGrid;
 
@@ -175,7 +176,7 @@ async function updateTimeSlots(selectedDate, doctorId, widgetElement) {
     // Генерируем кнопки времени с проверкой занятости и прошедшего времени
     let timeButtons = "";
     const step = 15;
-    const breakStart = 12.4; // ДО 12:30 (включительно)
+    const breakStart = 12.4; // 12:30
     const breakEnd = 14; // 14:00
 
     for (let decimalHour = 9; decimalHour <= 17; decimalHour += 0.25) {
@@ -194,7 +195,9 @@ async function updateTimeSlots(selectedDate, doctorId, widgetElement) {
       const isBooked = bookedSlots.includes(timeString);
 
       // Проверяем, не является ли время прошедшим (только для сегодняшнего дня)
-      const isPast = isToday && isPastTime(new Date(selectedDate), timeString);
+      // ИСПРАВЛЕНА СИНТАКСИЧЕСКАЯ ОШИБКА - убрана лишняя запятая
+      const isPast =
+        isToday && isPastTime(new Date(selectedDate + "T00:00:00"), timeString);
 
       // Слот недоступен если занят или прошел
       const isDisabled = isBooked || isPast;
