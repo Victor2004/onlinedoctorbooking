@@ -396,7 +396,8 @@ async function handleBookingSubmit(event) {
     const result = await saveAppointment(bookingData);
 
     if (result.success) {
-      showSuccessMessage("Запись успешно создана!");
+      console.log("Запись успешно создана!");
+      console.log(result);
       closeBookingForm();
 
       // Обновляем календарь если есть выбранная дата
@@ -405,6 +406,8 @@ async function handleBookingSubmit(event) {
         updateTimeSlots(formattedDate, currentDoctorId);
       }
     } else {
+      console.log("Ошибка при создании записи");
+      console.log(result.error);
       throw new Error(result.error || "Ошибка при создании записи");
     }
   } catch (error) {
@@ -446,16 +449,6 @@ async function saveAppointment(bookingData) {
   }
 }
 
-// Показать сообщение об успехе
-function showSuccessMessage(message) {
-  alert(message); // Можно заменить на красивый toast
-}
-
-// Показать сообщение об ошибке
-function showErrorMessage(message) {
-  alert("Ошибка: " + message); // Можно заменить на красивый toast
-}
-
 // Инициализация календаря при загрузке
 document.addEventListener("DOMContentLoaded", function () {
   // Автоматически выбираем первый доступный день
@@ -480,7 +473,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // Генерация HTML календаря для доктора
-function generateCalendarHTML(doctorId = 1) {
+function generateCalendarHTML(doctorId) {
   return `
     <div class="appointment-widget" data-doctor-id="${doctorId}">
         <!-- Выбор клиники -->
