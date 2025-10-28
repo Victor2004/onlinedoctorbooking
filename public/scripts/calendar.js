@@ -470,10 +470,7 @@ async function handleBookingSubmit(event) {
 
       // ПРОСТАЯ ПЕРЕЗАГРУЗКА СТРАНИЦЫ ПОСЛЕ УСПЕШНОЙ ЗАПИСИ
       // alert("Запись успешно создана! Страница будет перезагружена.");
-      // location.reload();
-      setTimeout(() => {
-        location.reload();
-      }, 800);
+      location.reload();
     } else {
       console.log("Ошибка при создании записи");
       console.log(result.error);
