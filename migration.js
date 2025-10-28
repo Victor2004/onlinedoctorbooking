@@ -2,7 +2,18 @@ const fs = require("fs");
 const database = require("./database");
 
 async function migrateFromJSON() {
+  // Очищаем базу данных перед началом миграции
   await database.init();
+
+  // Удаляем все существующие данные
+  await database.db.run("DELETE FROM appointments");
+  await database.db.run("DELETE FROM doctors");
+
+  // Сбрасываем автоинкрементные счетчики (для SQLite)
+  await database.db.run("DELETE FROM sqlite_sequence WHERE name='doctors'");
+  await database.db.run(
+    "DELETE FROM sqlite_sequence WHERE name='appointments'"
+  );
 
   // Миграция докторов
   const doctorsData = JSON.parse(fs.readFileSync("public/data/doctors.json"));
