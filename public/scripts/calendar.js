@@ -100,7 +100,7 @@ function selectDay(button, doctorId) {
   const formattedDate = formatDateForAPI(currentSelectedDate);
 
   // Загружаем доступное время для выбранной даты
-  updateTimeSlots(formattedDate, doctorId);
+  updateTimeSlots(formattedDate, doctorId, widget);
 }
 
 function openCalendar() {
@@ -108,19 +108,41 @@ function openCalendar() {
 }
 
 // Обновление доступных временных слотов
-async function updateTimeSlots(selectedDate, doctorId) {
-  const timeGrid = document.querySelector(".time-grid");
-  if (!timeGrid) return;
+async function updateTimeSlots(selectedDate, doctorId, widgetElement) {
+  let timeGrid;
+
+  if (widgetElement) {
+    // Если передан конкретный виджет, ищем time-grid внутри него
+    timeGrid = widgetElement.querySelector(".time-grid");
+  } else {
+    // Иначе используем общий поиск (для обратной совместимости)
+    timeGrid = document.querySelector(".time-grid");
+  }
+
+  if (!timeGrid) {
+    console.error("Time grid not found");
+    return;
+  }
+
+  // Показываем индикатор загрузки
+  timeGrid.innerHTML = "<p>Загрузка времени...</p>";
 
   try {
     // Получаем занятые слоты с сервера
     const response = await fetch(
       `/api/availability/${doctorId}/${selectedDate}`
     );
-    const data = await response.json();
-    const bookedSlots = data.bookedSlots.map((slot) => slot.time);
 
-    // Генерируем кнопки времени
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const bookedSlots = data.bookedSlots
+      ? data.bookedSlots.map((slot) => slot.time)
+      : [];
+
+    // Генерируем кнопки времени с проверкой занятости
     let timeButtons = "";
     const step = 15;
     const breakStart = 12.5; // 12:30
@@ -143,16 +165,21 @@ async function updateTimeSlots(selectedDate, doctorId) {
       const buttonClass = isBooked ? "time-button disabled" : "time-button";
 
       timeButtons += `<button class="${buttonClass}" 
-                ${
-                  isBooked
-                    ? "disabled"
-                    : `onclick="openBookingForm('${selectedDate}', '${timeString}', ${doctorId})"`
-                }>
-                ${timeString}
-            </button>\n`;
+                    ${
+                      isBooked
+                        ? "disabled"
+                        : `onclick="openBookingForm('${selectedDate}', '${timeString}', ${doctorId})"`
+                    }>
+                    ${timeString}
+                </button>\n`;
     }
 
     timeGrid.innerHTML = timeButtons;
+
+    // Если нет доступного времени, показываем сообщение
+    if (timeButtons === "") {
+      timeGrid.innerHTML = "<p>Нет доступного времени</p>";
+    }
   } catch (error) {
     console.error("Ошибка загрузки доступного времени:", error);
     timeGrid.innerHTML = "<p>Ошибка загрузки времени</p>";
@@ -411,7 +438,8 @@ async function handleBookingSubmit(event) {
       throw new Error(result.error || "Ошибка при создании записи");
     }
   } catch (error) {
-    showErrorMessage(error.message);
+    // showErrorMessage(error.message);
+    alert("Ошибка: " + error.message);
   } finally {
     submitButton.textContent = originalText;
     submitButton.disabled = false;
@@ -450,26 +478,26 @@ async function saveAppointment(bookingData) {
 }
 
 // Инициализация календаря при загрузке
+// Обновляем инициализацию для правильной работы с несколькими врачами
 document.addEventListener("DOMContentLoaded", function () {
-  // Автоматически выбираем первый доступный день
-  const firstAvailableDay = document.querySelector(
-    ".day-button:not(.disabled)"
-  );
-  if (firstAvailableDay) {
-    firstAvailableDay.classList.add("selected");
+  // Для каждого виджета записи выбираем первый доступный день
+  document.querySelectorAll(".appointment-widget").forEach((widget) => {
+    const firstAvailableDay = widget.querySelector(
+      ".day-button:not(.disabled)"
+    );
+    if (firstAvailableDay) {
+      firstAvailableDay.classList.add("selected");
 
-    // Если есть doctorId в data-атрибуте, используем его
-    const doctorId =
-      firstAvailableDay.closest(".appointment-widget")?.dataset?.doctorId || 1;
-    currentDoctorId = doctorId;
+      const doctorId = widget.dataset.doctorId || 1;
+      const dateText =
+        firstAvailableDay.querySelector(".date-full").textContent;
+      const selectedDate = parseDateFromText(dateText);
+      const formattedDate = formatDateForAPI(selectedDate);
 
-    const dateText = firstAvailableDay.querySelector(".date-full").textContent;
-    currentSelectedDate = parseDateFromText(dateText);
-    const formattedDate = formatDateForAPI(currentSelectedDate);
-
-    // Загружаем доступное время
-    updateTimeSlots(formattedDate, doctorId);
-  }
+      // Загружаем доступное время для этого виджета
+      updateTimeSlots(formattedDate, doctorId, widget);
+    }
+  });
 });
 
 // Генерация HTML календаря для доктора
@@ -526,8 +554,8 @@ function generateCalendarHTML(doctorId) {
         </div>
 
         <!-- Выбор времени -->
-        <div class="time-grid">
-            ${generateTimeButtons(doctorId)}
+        <div class="time-grid" id="timeGrid-${doctorId}">
+            <!-- Время будет загружено после выбора дня -->
         </div>
     </div>`;
 }

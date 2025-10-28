@@ -1,3 +1,5 @@
+// Уточнить что делает. Вроде программа только для тестирования telegram бота 
+
 const express = require("express");
 const router = express.Router();
 const User = require("../models/User");

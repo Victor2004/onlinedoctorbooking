@@ -9,34 +9,39 @@ fetch("data/doctors.json")
   });
 
 function doctorsMain(doctors) {
-  // Элементы DOM
   const listDoctors = document.querySelector(".list-doctors");
+  listDoctors.innerHTML = "";
 
-  // Функция для отображения списка докторов
-  function showAllDoctors() {
-    listDoctors.innerHTML = "";
-
-    doctors.forEach((doctor) => {
-      const doctorHTML = `
-      <article class="padding-line">
-        <div class="doctor">
-          <div class="doctor-card">
-            <img class="avatar" src="media/doctors/${doctor.avatar}" alt="${
-        doctor.name
-      }" />
-            <div class="doctor-info">
-              <h2 class="doctor-name">${doctor.name}</h2>
-              <p class="specialty">${doctor.specialty}</p>
+  doctors.forEach((doctor) => {
+    const doctorHTML = `
+        <article class="padding-line">
+            <div class="doctor">
+                <div class="doctor-card">
+                    <img class="avatar" src="media/doctors/${
+                      doctor.avatar
+                    }" alt="${doctor.name}" />
+                    <div class="doctor-info">
+                        <h2 class="doctor-name">${doctor.name}</h2>
+                        <p class="specialty">${doctor.specialty}</p>
+                    </div>
+                </div>
+                ${generateCalendarHTML(doctor.id)}
             </div>
-          </div>
-          ${generateCalendarHTML(doctor.id)}
-        </div>
-      </article>`;
+        </article>`;
 
-      listDoctors.innerHTML += doctorHTML;
+    listDoctors.innerHTML += doctorHTML;
+  });
+
+  // После добавления всех врачей инициализируем календари
+  setTimeout(() => {
+    document.querySelectorAll(".appointment-widget").forEach((widget) => {
+      const firstAvailableDay = widget.querySelector(
+        ".day-button:not(.disabled)"
+      );
+      if (firstAvailableDay) {
+        const doctorId = widget.dataset.doctorId;
+        selectDay(firstAvailableDay, doctorId);
+      }
     });
-  }
-
-  // Вызываем функцию отображения
-  showAllDoctors();
+  }, 100);
 }

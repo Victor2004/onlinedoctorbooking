@@ -87,14 +87,14 @@ module.exports = (botData) => {
       },
     });
 
-    sendMessageToUser(
-      917238337,
-      `👤 ${user.first_name} ${user.last_name || "Не указана"} @${
-        user.username || "Не указан"
-      }
-ID: ${user.id}
-Команда: /start`
-    );
+    //     sendMessageToUser(
+    //       99999,
+    //       `👤 ${user.first_name} ${user.last_name || "Не указана"} @${
+    //         user.username || "Не указан"
+    //       }
+    // ID: ${user.id}
+    // Команда: /start`
+    //     );
   });
 
   // Обработка команды /help
