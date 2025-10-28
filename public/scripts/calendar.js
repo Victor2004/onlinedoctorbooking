@@ -473,7 +473,7 @@ async function handleBookingSubmit(event) {
       // location.reload();
       setTimeout(() => {
         location.reload();
-      }, 1500); // Перезагрузка через 1.5 секунды
+      }, 800);
     } else {
       console.log("Ошибка при создании записи");
       console.log(result.error);
