@@ -102,45 +102,13 @@ function isPastTime(date, timeString) {
   return slotDateTime < now;
 }
 
-// Добавляем функцию для проверки недоступных дат (используем существующий API)
-async function isDateUnavailable(date, doctorId) {
-  try {
-    const formattedDate = formatDateForAPI(date);
-
-    // Используем существующий endpoint availability, но проверяем только факт недоступности даты
-    const response = await fetch(
-      `/api/availability/${doctorId}/${formattedDate}`
-    );
-
-    if (!response.ok) {
-      console.error("Ошибка при проверке доступности даты");
-      return false;
-    }
-
-    const data = await response.json();
-
-    // Если есть какие-то bookedSlots - это нормально, но если дата полностью недоступна,
-    // это должно обрабатываться на сервере в isTimeSlotAvailable
-    // Для простоты будем считать дату недоступной, если все слоты заняты или дата в прошлом
-    // Более точную проверку нужно делать на сервере
-
-    return false; // По умолчанию считаем дату доступной
-  } catch (error) {
-    console.error("Ошибка при проверке доступности дат:", error);
-    return false;
-  }
-}
-
-// Альтернативно, можно создать отдельный endpoint для проверки недоступных дат
-// Но пока будем использовать существующую логику
-
-// Обновляем функцию selectDay
-async function selectDay(button, doctorId) {
+function selectDay(button, doctorId) {
   // Проверяем, не является ли дата прошедшей
   const dateText = button.querySelector(".date-full").textContent;
   const selectedDate = parseDateFromText(dateText);
 
   if (isPastDate(selectedDate)) {
+    // Не позволяем выбирать прошедшие даты
     return;
   }
 
@@ -569,6 +537,8 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }, 100);
 });
+
+
 
 // Генерация HTML календаря для доктора
 function generateCalendarHTML(doctorId) {
