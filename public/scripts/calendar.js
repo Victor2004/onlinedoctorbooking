@@ -132,6 +132,26 @@ function selectDay(button, doctorId) {
   updateTimeSlots(formattedDate, doctorId, widget);
 }
 
+// Функция для проверки недоступных дат
+async function isDateUnavailable(date, doctorId) {
+  try {
+    const formattedDate = formatDateForAPI(date);
+    const response = await fetch(
+      `/api/date-unavailable/${doctorId}/${formattedDate}`
+    );
+
+    if (!response.ok) {
+      return false;
+    }
+
+    const data = await response.json();
+    return data.isUnavailable;
+  } catch (error) {
+    console.error("Ошибка при проверке недоступных дат:", error);
+    return false;
+  }
+}
+
 function openCalendar() {
   alert("Здесь будет открыт полный календарь");
 }
@@ -537,8 +557,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }, 100);
 });
-
-
 
 // Генерация HTML календаря для доктора
 function generateCalendarHTML(doctorId) {

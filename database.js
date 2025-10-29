@@ -153,6 +153,24 @@ class Database {
     }
   }
 
+  async isDateUnavailable(doctorId, date) {
+    try {
+      // Проверяем недоступные даты
+      const unavailable = await this.db.get(
+        `
+              SELECT 1 FROM unavailable_dates 
+              WHERE date = ? AND (doctor_id IS NULL OR doctor_id = ?)
+          `,
+        [date, doctorId]
+      );
+
+      return !!unavailable;
+    } catch (error) {
+      console.error("Error checking date availability:", error);
+      return false;
+    }
+  }
+
   // Создание записи
   async createAppointment(bookingData) {
     try {

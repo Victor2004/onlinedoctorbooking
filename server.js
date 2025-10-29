@@ -58,6 +58,20 @@ app.get("/api/availability/:doctorId/:date", async (req, res) => {
   }
 });
 
+// API для проверки недоступности даты
+app.get("/api/date-unavailable/:doctorId/:date", async (req, res) => {
+  try {
+    const { doctorId, date } = req.params;
+    const isUnavailable = await database.isDateUnavailable(
+      parseInt(doctorId),
+      date
+    );
+    res.json({ isUnavailable });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // API для создания записи
 app.post("/api/appointments", async (req, res) => {
   try {
