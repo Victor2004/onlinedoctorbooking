@@ -153,14 +153,15 @@ class Database {
     }
   }
 
+  // В класс Database в database.js добавляем метод:
   async isDateUnavailable(doctorId, date) {
     try {
       // Проверяем недоступные даты
       const unavailable = await this.db.get(
         `
-              SELECT 1 FROM unavailable_dates 
-              WHERE date = ? AND (doctor_id IS NULL OR doctor_id = ?)
-          `,
+        SELECT 1 FROM unavailable_dates 
+        WHERE date = ? AND (doctor_id IS NULL OR doctor_id = ?)
+      `,
         [date, doctorId]
       );
 

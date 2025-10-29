@@ -102,13 +102,18 @@ function isPastTime(date, timeString) {
   return slotDateTime < now;
 }
 
-function selectDay(button, doctorId) {
+async function selectDay(button, doctorId) {
   // Проверяем, не является ли дата прошедшей
   const dateText = button.querySelector(".date-full").textContent;
   const selectedDate = parseDateFromText(dateText);
 
   if (isPastDate(selectedDate)) {
-    // Не позволяем выбирать прошедшие даты
+    return;
+  }
+
+  // Дополнительная проверка: не является ли дата недоступной
+  const isUnavailable = await isDateUnavailable(selectedDate, doctorId);
+  if (isUnavailable) {
     return;
   }
 
@@ -559,7 +564,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // Генерация HTML календаря для доктора
-function generateCalendarHTML(doctorId) {
+async function generateCalendarHTML(doctorId) {
   // Проверяем, какие даты являются прошедшими
   const today = new Date();
   const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
@@ -569,13 +574,21 @@ function generateCalendarHTML(doctorId) {
   const isTomorrowPast = isPastDate(tomorrow);
   const isDayAfterTomorrowPast = isPastDate(dayAfterTomorrow);
 
+  // Проверяем недоступные даты
+  const isTodayUnavailable = await isDateUnavailable(today, doctorId);
+  const isTomorrowUnavailable = await isDateUnavailable(tomorrow, doctorId);
+  const isDayAfterTomorrowUnavailable = await isDateUnavailable(
+    dayAfterTomorrow,
+    doctorId
+  );
+
   // Определяем, какая дата должна быть выбрана по умолчанию (первая доступная)
   let defaultSelectedDate = null;
-  if (!isTodayPast) {
+  if (!isTodayPast && !isTodayUnavailable) {
     defaultSelectedDate = today;
-  } else if (!isTomorrowPast) {
+  } else if (!isTomorrowPast && !isTomorrowUnavailable) {
     defaultSelectedDate = tomorrow;
-  } else if (!isDayAfterTomorrowPast) {
+  } else if (!isDayAfterTomorrowPast && !isDayAfterTomorrowUnavailable) {
     defaultSelectedDate = dayAfterTomorrow;
   }
 
@@ -596,12 +609,14 @@ function generateCalendarHTML(doctorId) {
         <!-- Выбор дня -->
         <div class="day-grid">
             <button class="day-button ${
-              !isTodayPast && defaultSelectedDate?.getDate() === today.getDate()
+              !isTodayPast &&
+              !isTodayUnavailable &&
+              defaultSelectedDate?.getDate() === today.getDate()
                 ? "selected"
                 : ""
-            } ${isTodayPast ? "disabled" : ""}" 
+            } ${isTodayPast || isTodayUnavailable ? "disabled" : ""}" 
                 ${
-                  isTodayPast
+                  isTodayPast || isTodayUnavailable
                     ? "disabled"
                     : `onclick="selectDay(this, ${doctorId})"`
                 }>
@@ -612,12 +627,13 @@ function generateCalendarHTML(doctorId) {
             </button>
             <button class="day-button ${
               !isTomorrowPast &&
+              !isTomorrowUnavailable &&
               defaultSelectedDate?.getDate() === tomorrow.getDate()
                 ? "selected"
                 : ""
-            } ${isTomorrowPast ? "disabled" : ""}" 
+            } ${isTomorrowPast || isTomorrowUnavailable ? "disabled" : ""}" 
                 ${
-                  isTomorrowPast
+                  isTomorrowPast || isTomorrowUnavailable
                     ? "disabled"
                     : `onclick="selectDay(this, ${doctorId})"`
                 }>
@@ -628,12 +644,15 @@ function generateCalendarHTML(doctorId) {
             </button>
             <button class="day-button ${
               !isDayAfterTomorrowPast &&
+              !isDayAfterTomorrowUnavailable &&
               defaultSelectedDate?.getDate() === dayAfterTomorrow.getDate()
                 ? "selected"
                 : ""
-            } ${isDayAfterTomorrowPast ? "disabled" : ""}" 
+            } ${
+    isDayAfterTomorrowPast || isDayAfterTomorrowUnavailable ? "disabled" : ""
+  }" 
                 ${
-                  isDayAfterTomorrowPast
+                  isDayAfterTomorrowPast || isDayAfterTomorrowUnavailable
                     ? "disabled"
                     : `onclick="selectDay(this, ${doctorId})"`
                 }>
