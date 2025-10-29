@@ -5,6 +5,7 @@ require("dotenv").config();
 module.exports = (botData) => {
   const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
   const WEB_SERVER_URL = process.env.WEB_SERVER_URL;
+  const TELEGRAM_GROUP_ID = process.env.TELEGRAM_GROUP_ID; // Добавляем ID группы
 
   if (!BOT_TOKEN) {
     console.error("❌ TELEGRAM_BOT_TOKEN is not set in .env file");
@@ -12,6 +13,109 @@ module.exports = (botData) => {
   }
 
   const bot = new Telegraf(BOT_TOKEN);
+
+  // Функция для отправки сообщения в группу о новой записи
+  async function sendAppointmentNotification(appointmentData) {
+    if (!TELEGRAM_GROUP_ID) {
+      console.error("❌ TELEGRAM_GROUP_ID is not set in .env file");
+      return false;
+    }
+
+    try {
+      const message = formatAppointmentMessage(appointmentData);
+      await bot.telegram.sendMessage(TELEGRAM_GROUP_ID, message, {
+        parse_mode: "HTML",
+      });
+      console.log("✅ Уведомление о записи отправлено в группу");
+      return true;
+    } catch (error) {
+      console.error("❌ Ошибка отправки уведомления в группу:", error.message);
+      return false;
+    }
+  }
+
+  // Функция для форматирования сообщения о записи
+  function formatAppointmentMessage(appointmentData) {
+    const { doctor, date, time, patient, parentInfo } = appointmentData;
+
+    let message = `🆕 <b>Новая запись на прием</b>\n\n`;
+    message += `<b>👨‍⚕️ Врач:</b> ${doctor.name}\n`;
+    message += `<b>📅 Дата:</b> ${formatDisplayDateForTelegram(date)}\n`;
+    message += `<b>⏰ Время:</b> ${time}\n\n`;
+
+    message += `<b>👤 Пациент:</b>\n`;
+    message += `• ФИО: ${patient.fullName}\n`;
+    message += `• Телефон: ${patient.phone}\n`;
+    message += `• Дата рождения: ${formatDateForTelegram(patient.birthDate)}\n`;
+
+    if (patient.email) {
+      message += `• Email: ${patient.email}\n`;
+    }
+
+    if (patient.isChild) {
+      message += `• 👶 Ребенок\n`;
+    }
+
+    if (patient.isMobilePatient) {
+      message += `• ♿ Не мобильный пациент\n`;
+    }
+
+    if (parentInfo) {
+      message += `\n<b>👨‍👦 Данные родителя:</b>\n`;
+      message += `• ФИО: ${parentInfo.fullName}\n`;
+      message += `• Телефон: ${parentInfo.phone}\n`;
+      if (parentInfo.email) {
+        message += `• Email: ${parentInfo.email}\n`;
+      }
+    }
+
+    message += `\n📋 <b>Специализация врача:</b>\n${doctor.specialty}`;
+
+    return message;
+  }
+
+  // Вспомогательные функции для форматирования дат
+  function formatDisplayDateForTelegram(dateString) {
+    const date = new Date(dateString + "T00:00:00");
+    const days = [
+      "Воскресенье",
+      "Понедельник",
+      "Вторник",
+      "Среда",
+      "Четверг",
+      "Пятница",
+      "Суббота",
+    ];
+    const months = [
+      "янв.",
+      "фев.",
+      "мар.",
+      "апр.",
+      "мая",
+      "июн.",
+      "июл.",
+      "авг.",
+      "сен.",
+      "окт.",
+      "ноя.",
+      "дек.",
+    ];
+
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+    const dayName = days[date.getDay()];
+
+    return `${day} ${month} ${year} (${dayName})`;
+  }
+
+  function formatDateForTelegram(dateString) {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}.${month}.${year}`;
+  }
 
   // Функция для отправки событий на сервер
   const sendBotEvent = async (type, data) => {
@@ -53,7 +157,9 @@ module.exports = (botData) => {
     }
   }
 
+  // Экспортируем функции для использования в других модулях
   module.exports.sendMessageToUser = sendMessageToUser;
+  module.exports.sendAppointmentNotification = sendAppointmentNotification;
 
   // Обработка команды /start
   bot.start(async (ctx) => {
@@ -256,5 +362,9 @@ module.exports = (botData) => {
     sendBotEvent("bot_status", { status: "offline" });
   });
 
-  return bot;
+  return {
+    bot,
+    sendMessageToUser,
+    sendAppointmentNotification,
+  };
 };

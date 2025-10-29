@@ -89,6 +89,36 @@ app.post("/api/appointments", async (req, res) => {
     }
 
     const appointmentId = await database.createAppointment(bookingData);
+
+    // Получаем информацию о докторе для уведомления
+    const doctors = await database.getDoctors();
+    const doctor = doctors.find((d) => d.id === bookingData.doctorId);
+
+    // Формируем данные для уведомления
+    const appointmentNotificationData = {
+      doctor: {
+        name: doctor.name,
+        specialty: doctor.specialty,
+      },
+      date: bookingData.date,
+      time: bookingData.time,
+      patient: bookingData.patient,
+      parentInfo: bookingData.parentInfo,
+      appointmentId: appointmentId,
+    };
+
+    // Отправляем уведомление в Telegram группу
+    try {
+      if (telegramBot && telegramBot.sendAppointmentNotification) {
+        await telegramBot.sendAppointmentNotification(
+          appointmentNotificationData
+        );
+      }
+    } catch (telegramError) {
+      console.error("Ошибка отправки уведомления в Telegram:", telegramError);
+      // Не прерываем выполнение если не удалось отправить в Telegram
+    }
+
     res.json({ success: true, appointmentId });
   } catch (error) {
     res.status(500).json({ error: error.message });
