@@ -158,190 +158,190 @@ module.exports = (botData) => {
   }
 
   // ДОБАВЛЯЕМ КОМАНДУ ДЛЯ ПОЛУЧЕНИЯ ID ГРУППЫ
-  bot.command("getid", async (ctx) => {
-    const chat = ctx.chat;
+  //   bot.command("getid", async (ctx) => {
+  //     const chat = ctx.chat;
 
-    // Проверяем, что команда вызвана в группе/супергруппе/канале
-    if (chat.type === "private") {
-      await ctx.reply(
-        `👤 Ваш личный ID: <code>${chat.id}</code>\n\n` +
-          `Чтобы получить ID группы:\n` +
-          `1. Добавьте меня в группу\n` +
-          `2. Дайте права на отправку сообщений\n` +
-          `3. Напишите команду /getid в группе`,
-        { parse_mode: "HTML" }
-      );
-      return;
-    }
+  //     // Проверяем, что команда вызвана в группе/супергруппе/канале
+  //     if (chat.type === "private") {
+  //       await ctx.reply(
+  //         `👤 Ваш личный ID: <code>${chat.id}</code>\n\n` +
+  //           `Чтобы получить ID группы:\n` +
+  //           `1. Добавьте меня в группу\n` +
+  //           `2. Дайте права на отправку сообщений\n` +
+  //           `3. Напишите команду /getid в группе`,
+  //         { parse_mode: "HTML" }
+  //       );
+  //       return;
+  //     }
 
-    const chatId = chat.id;
-    const chatTitle = chat.title || "Без названия";
-    const chatType = chat.type;
+  //     const chatId = chat.id;
+  //     const chatTitle = chat.title || "Без названия";
+  //     const chatType = chat.type;
 
-    let chatTypeText = "";
-    switch (chatType) {
-      case "group":
-        chatTypeText = "Группа";
-        break;
-      case "supergroup":
-        chatTypeText = "Супергруппа";
-        break;
-      case "channel":
-        chatTypeText = "Канал";
-        break;
-      default:
-        chatTypeText = chatType;
-    }
+  //     let chatTypeText = "";
+  //     switch (chatType) {
+  //       case "group":
+  //         chatTypeText = "Группа";
+  //         break;
+  //       case "supergroup":
+  //         chatTypeText = "Супергруппа";
+  //         break;
+  //       case "channel":
+  //         chatTypeText = "Канал";
+  //         break;
+  //       default:
+  //         chatTypeText = chatType;
+  //     }
 
-    const message = `
-📋 <b>Информация о чате:</b>
+  //     const message = `
+  // 📋 <b>Информация о чате:</b>
 
-🏷 <b>Название:</b> ${chatTitle}
-🆔 <b>ID чата:</b> <code>${chatId}</code>
-📝 <b>Тип:</b> ${chatTypeText}
+  // 🏷 <b>Название:</b> ${chatTitle}
+  // 🆔 <b>ID чата:</b> <code>${chatId}</code>
+  // 📝 <b>Тип:</b> ${chatTypeText}
 
-💡 <b>Для использования в .env файле:</b>
-<code>TELEGRAM_GROUP_ID=${chatId}</code>
+  // 💡 <b>Для использования в .env файле:</b>
+  // <code>TELEGRAM_GROUP_ID=${chatId}</code>
 
-⚠️ <b>Важно:</b> Не делитесь этим ID с другими!
-    `.trim();
+  // ⚠️ <b>Важно:</b> Не делитесь этим ID с другими!
+  //     `.trim();
 
-    try {
-      await ctx.reply(message, {
-        parse_mode: "HTML",
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text: "📋 Скопировать ID",
-                callback_data: `copy_id_${chatId}`,
-              },
-            ],
-          ],
-        },
-      });
+  //     try {
+  //       await ctx.reply(message, {
+  //         parse_mode: "HTML",
+  //         reply_markup: {
+  //           inline_keyboard: [
+  //             [
+  //               {
+  //                 text: "📋 Скопировать ID",
+  //                 callback_data: `copy_id_${chatId}`,
+  //               },
+  //             ],
+  //           ],
+  //         },
+  //       });
 
-      console.log(`✅ ID группы отправлен: ${chatTitle} (${chatId})`);
-    } catch (error) {
-      console.error("❌ Ошибка отправки ID группы:", error.message);
+  //       console.log(`✅ ID группы отправлен: ${chatTitle} (${chatId})`);
+  //     } catch (error) {
+  //       console.error("❌ Ошибка отправки ID группы:", error.message);
 
-      // Если не удалось отправить сообщение, пробуем отправить просто текст
-      try {
-        await ctx.reply(
-          `ID этой группы: ${chatId}\n\n` +
-            `Добавьте в .env файл:\n` +
-            `TELEGRAM_GROUP_ID=${chatId}`
-        );
-      } catch (fallbackError) {
-        console.error(
-          "❌ Не удалось отправить даже простое сообщение:",
-          fallbackError.message
-        );
-      }
-    }
-  });
+  //       // Если не удалось отправить сообщение, пробуем отправить просто текст
+  //       try {
+  //         await ctx.reply(
+  //           `ID этой группы: ${chatId}\n\n` +
+  //             `Добавьте в .env файл:\n` +
+  //             `TELEGRAM_GROUP_ID=${chatId}`
+  //         );
+  //       } catch (fallbackError) {
+  //         console.error(
+  //           "❌ Не удалось отправить даже простое сообщение:",
+  //           fallbackError.message
+  //         );
+  //       }
+  //     }
+  //   });
 
-  // Обработка нажатия на кнопку "Скопировать ID"
-  bot.action(/copy_id_(-?\d+)/, async (ctx) => {
-    const chatId = ctx.match[1];
+  // // Обработка нажатия на кнопку "Скопировать ID"
+  // bot.action(/copy_id_(-?\d+)/, async (ctx) => {
+  //   const chatId = ctx.match[1];
 
-    await ctx.answerCbQuery(`ID скопирован: ${chatId}`);
+  //   await ctx.answerCbQuery(`ID скопирован: ${chatId}`);
 
-    // Можно также отправить сообщение с инструкцией
-    await ctx.reply(
-      `✅ ID скопирован!\n\n` +
-        `Добавьте эту строку в ваш .env файл:\n\n` +
-        `<code>TELEGRAM_GROUP_ID=${chatId}</code>`,
-      { parse_mode: "HTML" }
-    );
-  });
+  //   // Можно также отправить сообщение с инструкцией
+  //   await ctx.reply(
+  //     `✅ ID скопирован!\n\n` +
+  //       `Добавьте эту строку в ваш .env файл:\n\n` +
+  //       `<code>TELEGRAM_GROUP_ID=${chatId}</code>`,
+  //     { parse_mode: "HTML" }
+  //   );
+  // });
 
-  // Команда помощи по получению ID
-  bot.command("id", async (ctx) => {
-    await ctx.reply(
-      `🆔 <b>Команды для получения ID:</b>\n\n` +
-        `/getid - показать ID этого чата\n` +
-        `/id - эта справка\n\n` +
-        `<i>Работает в личных сообщениях, группах и каналах</i>`,
-      { parse_mode: "HTML" }
-    );
-  });
+  // // Команда помощи по получению ID
+  // bot.command("id", async (ctx) => {
+  //   await ctx.reply(
+  //     `🆔 <b>Команды для получения ID:</b>\n\n` +
+  //       `/getid - показать ID этого чата\n` +
+  //       `/id - эта справка\n\n` +
+  //       `<i>Работает в личных сообщениях, группах и каналах</i>`,
+  //     { parse_mode: "HTML" }
+  //   );
+  // });
 
   // Экспортируем функции для использования в других модулях
   module.exports.sendMessageToUser = sendMessageToUser;
   module.exports.sendAppointmentNotification = sendAppointmentNotification;
 
-  // Обработка команды /start
-  bot.start(async (ctx) => {
-    const user = ctx.from;
+  //   // Обработка команды /start
+  //   bot.start(async (ctx) => {
+  //     const user = ctx.from;
 
-    const welcomeMessage = `
-👋 Привет, ${user.first_name}!
+  //     const welcomeMessage = `
+  // 👋 Привет, ${user.first_name}!
 
-🤖 Я Telegram бот для уведомлений о записях
+  // 🤖 Я Telegram бот для уведомлений о записях
 
-📊 Доступные команды:
-/getid - получить ID группы
-/profile - информация о профиле`;
+  // 📊 Доступные команды:
+  // /getid - получить ID группы
+  // /profile - информация о профиле`;
 
-    await ctx.reply(welcomeMessage, {
-      reply_markup: {
-        keyboard: [["🆔 Получить ID группы", "👤 Профиль"]],
-        resize_keyboard: true,
-      },
-    });
-  });
+  //     await ctx.reply(welcomeMessage, {
+  //       reply_markup: {
+  //         keyboard: [["🆔 Получить ID группы", "👤 Профиль"]],
+  //         resize_keyboard: true,
+  //       },
+  //     });
+  //   });
 
-  // Обработка команды /profile
-  bot.command("profile", async (ctx) => {
-    const user = ctx.from;
+  //   // Обработка команды /profile
+  //   bot.command("profile", async (ctx) => {
+  //     const user = ctx.from;
 
-    const profileMessage = `
-👤 Ваш профиль:
+  //     const profileMessage = `
+  // 👤 Ваш профиль:
 
-🆔 ID: ${user.id}
-👤 Имя: ${user.first_name}
-📝 Фамилия: ${user.last_name || "Не указана"}
-🔗 Username: @${user.username || "Не указан"}
-`;
+  // 🆔 ID: ${user.id}
+  // 👤 Имя: ${user.first_name}
+  // 📝 Фамилия: ${user.last_name || "Не указана"}
+  // 🔗 Username: @${user.username || "Не указан"}
+  // `;
 
-    await ctx.reply(profileMessage);
-  });
+  //     await ctx.reply(profileMessage);
+  //   });
 
-  // Обработка текстовых сообщений (кнопки)
-  bot.hears("🆔 Получить ID группы", async (ctx) => {
-    // Перенаправляем на команду /getid
-    await ctx.reply(
-      "Используйте команду /getid в нужной группе чтобы получить её ID"
-    );
-  });
+  //   // Обработка текстовых сообщений (кнопки)
+  //   bot.hears("🆔 Получить ID группы", async (ctx) => {
+  //     // Перенаправляем на команду /getid
+  //     await ctx.reply(
+  //       "Используйте команду /getid в нужной группе чтобы получить её ID"
+  //     );
+  //   });
 
-  bot.hears("👤 Профиль", async (ctx) => {
-    const user = ctx.from;
-    const profileMessage = `
-👤 Ваш профиль:
+  //   bot.hears("👤 Профиль", async (ctx) => {
+  //     const user = ctx.from;
+  //     const profileMessage = `
+  // 👤 Ваш профиль:
 
-🆔 ID: ${user.id}
-👤 Имя: ${user.first_name}
-📝 Фамилия: ${user.last_name || "Не указана"}
-🔗 Username: @${user.username || "Не указан"}
-`;
+  // 🆔 ID: ${user.id}
+  // 👤 Имя: ${user.first_name}
+  // 📝 Фамилия: ${user.last_name || "Не указана"}
+  // 🔗 Username: @${user.username || "Не указан"}
+  // `;
 
-    await ctx.reply(profileMessage);
-  });
+  //     await ctx.reply(profileMessage);
+  //   });
 
-  // Обработка всех текстовых сообщений
-  bot.on("text", async (ctx) => {
-    const user = ctx.from;
-    const text = ctx.message.text;
+  //   // Обработка всех текстовых сообщений
+  //   bot.on("text", async (ctx) => {
+  //     const user = ctx.from;
+  //     const text = ctx.message.text;
 
-    // Игнорируем команды
-    if (text.startsWith("/")) return;
+  //     // Игнорируем команды
+  //     if (text.startsWith("/")) return;
 
-    await ctx.reply(
-      `⚠️ Нет такой команды\n\nИспользуйте /getid для получения ID группы`
-    );
-  });
+  //     await ctx.reply(
+  //       `⚠️ Нет такой команды\n\nИспользуйте /getid для получения ID группы`
+  //     );
+  //   });
 
   // Обработка ошибок
   bot.catch((err, ctx) => {
