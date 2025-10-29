@@ -5,7 +5,7 @@ require("dotenv").config();
 module.exports = (botData) => {
   const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
   const WEB_SERVER_URL = process.env.WEB_SERVER_URL;
-  const TELEGRAM_GROUP_ID = process.env.TELEGRAM_GROUP_ID; // Добавляем ID группы
+  const TELEGRAM_GROUP_ID = process.env.TELEGRAM_GROUP_ID;
 
   if (!BOT_TOKEN) {
     console.error("❌ TELEGRAM_BOT_TOKEN is not set in .env file");
@@ -157,6 +157,116 @@ module.exports = (botData) => {
     }
   }
 
+  // ДОБАВЛЯЕМ КОМАНДУ ДЛЯ ПОЛУЧЕНИЯ ID ГРУППЫ
+  bot.command("getid", async (ctx) => {
+    const chat = ctx.chat;
+
+    // Проверяем, что команда вызвана в группе/супергруппе/канале
+    if (chat.type === "private") {
+      await ctx.reply(
+        `👤 Ваш личный ID: <code>${chat.id}</code>\n\n` +
+          `Чтобы получить ID группы:\n` +
+          `1. Добавьте меня в группу\n` +
+          `2. Дайте права на отправку сообщений\n` +
+          `3. Напишите команду /getid в группе`,
+        { parse_mode: "HTML" }
+      );
+      return;
+    }
+
+    const chatId = chat.id;
+    const chatTitle = chat.title || "Без названия";
+    const chatType = chat.type;
+
+    let chatTypeText = "";
+    switch (chatType) {
+      case "group":
+        chatTypeText = "Группа";
+        break;
+      case "supergroup":
+        chatTypeText = "Супергруппа";
+        break;
+      case "channel":
+        chatTypeText = "Канал";
+        break;
+      default:
+        chatTypeText = chatType;
+    }
+
+    const message = `
+📋 <b>Информация о чате:</b>
+
+🏷 <b>Название:</b> ${chatTitle}
+🆔 <b>ID чата:</b> <code>${chatId}</code>
+📝 <b>Тип:</b> ${chatTypeText}
+
+💡 <b>Для использования в .env файле:</b>
+<code>TELEGRAM_GROUP_ID=${chatId}</code>
+
+⚠️ <b>Важно:</b> Не делитесь этим ID с другими!
+    `.trim();
+
+    try {
+      await ctx.reply(message, {
+        parse_mode: "HTML",
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: "📋 Скопировать ID",
+                callback_data: `copy_id_${chatId}`,
+              },
+            ],
+          ],
+        },
+      });
+
+      console.log(`✅ ID группы отправлен: ${chatTitle} (${chatId})`);
+    } catch (error) {
+      console.error("❌ Ошибка отправки ID группы:", error.message);
+
+      // Если не удалось отправить сообщение, пробуем отправить просто текст
+      try {
+        await ctx.reply(
+          `ID этой группы: ${chatId}\n\n` +
+            `Добавьте в .env файл:\n` +
+            `TELEGRAM_GROUP_ID=${chatId}`
+        );
+      } catch (fallbackError) {
+        console.error(
+          "❌ Не удалось отправить даже простое сообщение:",
+          fallbackError.message
+        );
+      }
+    }
+  });
+
+  // Обработка нажатия на кнопку "Скопировать ID"
+  bot.action(/copy_id_(-?\d+)/, async (ctx) => {
+    const chatId = ctx.match[1];
+
+    await ctx.answerCbQuery(`ID скопирован: ${chatId}`);
+
+    // Можно также отправить сообщение с инструкцией
+    await ctx.reply(
+      `✅ ID скопирован!\n\n` +
+        `Добавьте эту строку в ваш .env файл:\n\n` +
+        `<code>TELEGRAM_GROUP_ID=${chatId}</code>`,
+      { parse_mode: "HTML" }
+    );
+  });
+
+  // Команда помощи по получению ID
+  bot.command("id", async (ctx) => {
+    await ctx.reply(
+      `🆔 <b>Команды для получения ID:</b>\n\n` +
+        `/getid - показать ID этого чата\n` +
+        `/id - эта справка\n\n` +
+        `<i>Работает в личных сообщениях, группах и каналах</i>`,
+      { parse_mode: "HTML" }
+    );
+  });
+
   // Экспортируем функции для использования в других модулях
   module.exports.sendMessageToUser = sendMessageToUser;
   module.exports.sendAppointmentNotification = sendAppointmentNotification;
@@ -165,90 +275,26 @@ module.exports = (botData) => {
   bot.start(async (ctx) => {
     const user = ctx.from;
 
-    // Отправляем событие на сервер
-    // await sendBotEvent("user_start", {
-    //   userId: user.id,
-    //   firstName: user.first_name,
-    //   lastName: user.last_name,
-    //   username: user.username,
-    //   chatId: ctx.chat.id,
-    // });
-
     const welcomeMessage = `
 👋 Привет, ${user.first_name}!
 
-🤖 Я Telegram бот буду
+🤖 Я Telegram бот для уведомлений о записях
 
 📊 Доступные команды:
+/getid - получить ID группы
 /profile - информация о профиле`;
 
     await ctx.reply(welcomeMessage, {
       reply_markup: {
-        keyboard: [
-          // ["📊 Статистика", "👤 Профиль"],
-          // ["🌐 Сайт", "ℹ️ Помощь"],
-          ["👤 Профиль"],
-        ],
+        keyboard: [["🆔 Получить ID группы", "👤 Профиль"]],
         resize_keyboard: true,
       },
     });
-
-    //     sendMessageToUser(
-    //       99999,
-    //       `👤 ${user.first_name} ${user.last_name || "Не указана"} @${
-    //         user.username || "Не указан"
-    //       }
-    // ID: ${user.id}
-    // Команда: /start`
-    //     );
   });
-
-  // Обработка команды /help
-  //   bot.help(async (ctx) => {
-  //     const helpMessage = `
-  // 📖 Помощь по боту:
-
-  // Это демонстрационный Telegram бот с веб-интерфейсом.
-
-  // 🔧 Функции:
-  // • Отслеживание пользователей
-  // • Статистика в реальном времени
-  // • История сообщений
-  // • Веб-панель управления
-
-  // 💻 Технологии:
-  // • Backend: Node.js + Express
-  // • Bot: Telegraf
-  // • Frontend: HTML/CSS/JS
-  // • Хранилище: In-memory
-
-  // 🌐 Веб-сайт: ${WEB_SERVERURL}
-  //     `;
-
-  //     await ctx.reply(helpMessage);
-  //   });
-
-  // Обработка команды /stats
-  //   bot.command("stats", async (ctx) => {
-  //     const userCount = botData.stats.totalUsers;
-  //     const messageCount = botData.stats.totalMessages;
-
-  //     const statsMessage = `
-  // 📊 Статистика бота:
-
-  // 👥 Всего пользователей: ${userCount}
-  // 💬 Всего сообщений: ${messageCount}
-  // 🆔 Ваш ID: ${ctx.from.id}
-  // 🌐 Сайт: ${WEB_SERVER_URL}
-  //     `;
-
-  //     await ctx.reply(statsMessage);
-  //   });
 
   // Обработка команды /profile
   bot.command("profile", async (ctx) => {
     const user = ctx.from;
-    // const userData = botData.users.get(user.id);
 
     const profileMessage = `
 👤 Ваш профиль:
@@ -262,29 +308,11 @@ module.exports = (botData) => {
     await ctx.reply(profileMessage);
   });
 
-  // Обработка команды /website
-  // bot.command("website", async (ctx) => {
-  //   await ctx.reply(`🌐 Наш веб-сайт: ${WEB_SERVER_URL}`, {
-  //     reply_markup: {
-  //       inline_keyboard: [
-  //         [
-  //           {
-  //             text: "📱 Открыть сайт",
-  //             url: WEB_SERVER_URL,
-  //           },
-  //         ],
-  //       ],
-  //     },
-  //   });
-  // });
-
   // Обработка текстовых сообщений (кнопки)
-  bot.hears("📊 Статистика", async (ctx) => {
-    const userCount = botData.stats.totalUsers;
-    const messageCount = botData.stats.totalMessages;
-
+  bot.hears("🆔 Получить ID группы", async (ctx) => {
+    // Перенаправляем на команду /getid
     await ctx.reply(
-      `📊 Статистика:\nПользователей: ${userCount}\nСообщений: ${messageCount}`
+      "Используйте команду /getid в нужной группе чтобы получить её ID"
     );
   });
 
@@ -302,14 +330,6 @@ module.exports = (botData) => {
     await ctx.reply(profileMessage);
   });
 
-  bot.hears("🌐 Сайт", async (ctx) => {
-    await ctx.reply(`🌐 Сайт: ${WEB_SERVER_URL}`);
-  });
-
-  bot.hears("ℹ️ Помощь", async (ctx) => {
-    await ctx.reply("Для помощи используйте команду /help");
-  });
-
   // Обработка всех текстовых сообщений
   bot.on("text", async (ctx) => {
     const user = ctx.from;
@@ -318,19 +338,9 @@ module.exports = (botData) => {
     // Игнорируем команды
     if (text.startsWith("/")) return;
 
-    // Отправляем событие на сервер
-    // await sendBotEvent("user_message", {
-    //   userId: user.id,
-    //   firstName: user.first_name,
-    //   lastName: user.last_name,
-    //   username: user.username,
-    //   text: text,
-    //   chatId: ctx.chat.id,
-    // });
-
-    // Эхо-ответ
-    // await ctx.reply(`🔁 Вы сказали: "${text}"`);
-    await ctx.reply(`⚠️ Нет такой команды`);
+    await ctx.reply(
+      `⚠️ Нет такой команды\n\nИспользуйте /getid для получения ID группы`
+    );
   });
 
   // Обработка ошибок
@@ -343,6 +353,7 @@ module.exports = (botData) => {
     .launch()
     .then(() => {
       console.log("✅ Telegram bot started successfully!");
+      console.log("🤖 Бот готов к получению ID групп через команду /getid");
 
       // Обновляем статус бота
       sendBotEvent("bot_status", { status: "online" });
