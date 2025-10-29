@@ -16,7 +16,7 @@ class Database {
       });
 
       await this.createTables();
-      await this.insertSampleData();
+      // await this.insertSampleData();
       console.log("✅ SQLite database initialized");
     } catch (error) {
       console.error("❌ Database initialization error:", error);
@@ -78,48 +78,48 @@ class Database {
         `);
   }
 
-  async insertSampleData() {
-    // Проверяем, есть ли уже доктора
-    const doctorsCount = await this.db.get(
-      "SELECT COUNT(*) as count FROM doctors"
-    );
+  // async insertSampleData() {
+  //   // Проверяем, есть ли уже доктора
+  //   const doctorsCount = await this.db.get(
+  //     "SELECT COUNT(*) as count FROM doctors"
+  //   );
 
-    if (doctorsCount.count === 0) {
-      // Добавляем тестовых докторов
-      await this.db.run(
-        `
-                INSERT INTO doctors (name, specialty, avatar)
-                VALUES (?, ?, ?)
-            `,
-        ["Иванов Иван Иванович", "Кардиолог", "doctor1.jpg"]
-      );
+  //   if (doctorsCount.count === 0) {
+  //     // Добавляем тестовых докторов
+  //     await this.db.run(
+  //       `
+  //               INSERT INTO doctors (name, specialty, avatar)
+  //               VALUES (?, ?, ?)
+  //           `,
+  //       ["Иванов Иван Иванович", "Кардиолог", "doctor1.jpg"]
+  //     );
 
-      await this.db.run(
-        `
-                INSERT INTO doctors (name, specialty, avatar)
-                VALUES (?, ?, ?)
-            `,
-        ["Петрова Мария Сергеевна", "Невролог", "doctor2.jpg"]
-      );
+  //     await this.db.run(
+  //       `
+  //               INSERT INTO doctors (name, specialty, avatar)
+  //               VALUES (?, ?, ?)
+  //           `,
+  //       ["Петрова Мария Сергеевна", "Невролог", "doctor2.jpg"]
+  //     );
 
-      console.log("✅ Sample doctors added");
-    }
+  //     console.log("✅ Sample doctors added");
+  //   }
 
-    // Добавляем несколько недоступных дат для теста
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const formattedTomorrow = tomorrow.toISOString().split("T")[0];
+  //   // Добавляем несколько недоступных дат для теста
+  //   const tomorrow = new Date();
+  //   tomorrow.setDate(tomorrow.getDate() + 1);
+  //   const formattedTomorrow = tomorrow.toISOString().split("T")[0];
 
-    await this.db.run(
-      `
-            INSERT OR IGNORE INTO unavailable_dates (date, doctor_id, reason)
-            VALUES (?, ?, ?)
-        `,
-      [formattedTomorrow, 1, "Выходной"]
-    );
+  //   await this.db.run(
+  //     `
+  //           INSERT OR IGNORE INTO unavailable_dates (date, doctor_id, reason)
+  //           VALUES (?, ?, ?)
+  //       `,
+  //     [formattedTomorrow, 1, "Выходной"]
+  //   );
 
-    console.log("✅ Sample unavailable dates added");
-  }
+  //   console.log("✅ Sample unavailable dates added");
+  // }
 
   // Проверка доступности времени
   async isTimeSlotAvailable(doctorId, date, time) {
