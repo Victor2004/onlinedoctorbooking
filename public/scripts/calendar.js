@@ -44,7 +44,7 @@ function formatDateForAPI(date) {
 }
 
 // Получение даты из текста (например: "15 янв.")
-function parseDateFromTextSimple(dateText) {
+function parseDateFromText(dateText) {
   const [day, monthText] = dateText.split(" ");
   const monthNames = [
     "янв.",
