@@ -156,7 +156,40 @@ function openCalendar() {
   alert("Здесь будет открыт полный календарь");
 }
 
-// Обновление доступных временных слотов
+// Функция для получения расписания врача по ID
+function getDoctorSchedule(doctorId) {
+  // Врач 1: Альберт Светлана Робертовна
+  if (doctorId === 1) {
+    return {
+      startHour: 9,
+      endHour: 17,
+      step: 15, // 15 минут
+      breaks: [
+        { start: 12.65, end: 14 }, // перерыв с 12:30 до 14:00
+      ],
+    };
+  }
+  // Врачи 2 и 3: Долгова Светлана Геннадьевна и Полетаева Инна Александровна
+  else if (doctorId === 2 || doctorId === 3) {
+    return {
+      startHour: 9,
+      endHour: 17.5, // 17:30
+      step: 30, // 30 минут
+      breaks: [], // без перерывов
+    };
+  }
+  // По умолчанию (на всякий случай)
+  else {
+    return {
+      startHour: 9,
+      endHour: 17,
+      step: 15,
+      breaks: [{ start: 12.65, end: 14 }],
+    };
+  }
+}
+
+// Обновляем функцию updateTimeSlots для использования индивидуального расписания
 async function updateTimeSlots(selectedDate, doctorId, widgetElement) {
   let timeGrid;
 
@@ -193,15 +226,27 @@ async function updateTimeSlots(selectedDate, doctorId, widgetElement) {
     const today = new Date();
     const isToday = selectedDate === formatDateForAPI(today);
 
-    // Генерируем кнопки времени с проверкой занятости и прошедшего времени
-    let timeButtons = "";
-    const step = 15;
-    const breakStart = 12.5; // 12:30
-    const breakEnd = 14; // 14:00
+    // Получаем расписание для конкретного врача
+    const schedule = getDoctorSchedule(doctorId);
 
-    for (let decimalHour = 9; decimalHour <= 17; decimalHour += 0.25) {
-      // Пропускаем время перерыва
-      if (decimalHour >= breakStart && decimalHour < breakEnd) {
+    // Генерируем кнопки времени согласно расписанию врача
+    let timeButtons = "";
+
+    for (
+      let decimalHour = schedule.startHour;
+      decimalHour <= schedule.endHour;
+      decimalHour += schedule.step / 60
+    ) {
+      // Проверяем, не попадает ли время в перерыв
+      let inBreak = false;
+      for (const breakTime of schedule.breaks) {
+        if (decimalHour >= breakTime.start && decimalHour < breakTime.end) {
+          inBreak = true;
+          break;
+        }
+      }
+
+      if (inBreak) {
         continue;
       }
 
@@ -215,7 +260,6 @@ async function updateTimeSlots(selectedDate, doctorId, widgetElement) {
       const isBooked = bookedSlots.includes(timeString);
 
       // Проверяем, не является ли время прошедшим (только для сегодняшнего дня)
-      // ИСПРАВЛЕНА СИНТАКСИЧЕСКАЯ ОШИБКА - убрана лишняя запятая
       const isPast =
         isToday && isPastTime(new Date(selectedDate + "T00:00:00"), timeString);
 
@@ -242,34 +286,6 @@ async function updateTimeSlots(selectedDate, doctorId, widgetElement) {
     console.error("Ошибка загрузки доступного времени:", error);
     timeGrid.innerHTML = "<p>Ошибка загрузки времени</p>";
   }
-}
-
-// Генерация кнопок времени (для инициализации)
-function generateTimeButtons(doctorId = 1) {
-  let timeButtons = "";
-  const step = 15;
-  const breakStart = 12.5;
-  const breakEnd = 14;
-
-  for (let decimalHour = 9; decimalHour <= 17; decimalHour += 0.25) {
-    if (decimalHour >= breakStart && decimalHour < breakEnd) {
-      continue;
-    }
-
-    const hours = Math.floor(decimalHour);
-    const minutes = (decimalHour % 1) * 60;
-    const timeString = `${hours.toString().padStart(2, "0")}:${minutes
-      .toString()
-      .padStart(2, "0")}`;
-    const formattedDate = formatDateForAPI(today);
-
-    timeButtons += `<button class="time-button" 
-            onclick="openBookingForm('${formattedDate}', '${timeString}', ${doctorId})">
-            ${timeString}
-        </button>\n`;
-  }
-
-  return timeButtons;
 }
 
 // Функция открытия формы записи
