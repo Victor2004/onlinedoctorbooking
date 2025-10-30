@@ -44,7 +44,7 @@ function formatDateForAPI(date) {
 }
 
 // Получение даты из текста (например: "15 янв.")
-function parseDateFromText(dateText, baseDate = new Date()) {
+function parseDateFromTextSimple(dateText) {
   const [day, monthText] = dateText.split(" ");
   const monthNames = [
     "янв.",
@@ -63,16 +63,10 @@ function parseDateFromText(dateText, baseDate = new Date()) {
   const monthIndex = monthNames.findIndex((name) => name === monthText);
 
   if (monthIndex !== -1) {
-    const year = baseDate.getFullYear();
-    const targetDate = new Date(year, monthIndex, parseInt(day));
-
-    // Если дата в прошлом относительно базовой даты, берем следующий год
-    if (targetDate < baseDate) {
-      targetDate.setFullYear(year + 1);
-    }
-    return targetDate;
+    // Просто создаем дату с текущим годом
+    return new Date(new Date().getFullYear(), monthIndex, parseInt(day));
   }
-  return baseDate;
+  return new Date();
 }
 
 let currentDoctorId = null;
@@ -567,12 +561,11 @@ document.addEventListener("DOMContentLoaded", function () {
 async function generateCalendarHTML(doctorId) {
   // Проверяем, какие даты являются прошедшими
   const today = new Date();
-  const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
-  const dayAfterTomorrow = new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
 
-  const isTodayPast = isPastDate(today);
-  const isTomorrowPast = isPastDate(tomorrow);
-  const isDayAfterTomorrowPast = isPastDate(dayAfterTomorrow);
+  const dayAfterTomorrow = new Date(today);
+  dayAfterTomorrow.setDate(today.getDate() + 2);
 
   // Проверяем недоступные даты
   const isTodayUnavailable = await isDateUnavailable(today, doctorId);
