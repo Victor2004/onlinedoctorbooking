@@ -65,11 +65,6 @@ function parseDateFromText(dateText, baseDate = new Date()) {
   if (monthIndex !== -1) {
     const year = baseDate.getFullYear();
     const targetDate = new Date(year, monthIndex, parseInt(day));
-
-    // Если дата в прошлом относительно базовой даты, берем следующий год
-    if (targetDate < baseDate) {
-      targetDate.setFullYear(year + 1);
-    }
     return targetDate;
   }
   return baseDate;
