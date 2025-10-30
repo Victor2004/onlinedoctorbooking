@@ -63,28 +63,13 @@ function parseDateFromText(dateText, baseDate = new Date()) {
   const monthIndex = monthNames.findIndex((name) => name === monthText);
 
   if (monthIndex !== -1) {
-    const currentYear = baseDate.getFullYear();
+    const year = baseDate.getFullYear();
+    const targetDate = new Date(year, monthIndex, parseInt(day));
 
-    // Пробуем текущий год
-    let targetDate = new Date(currentYear, monthIndex, parseInt(day));
-    const baseDateWithoutTime = new Date(
-      currentYear,
-      baseDate.getMonth(),
-      baseDate.getDate()
-    );
-
-    // Если дата в прошлом, пробуем следующий год
-    if (targetDate < baseDateWithoutTime) {
-      targetDate = new Date(currentYear + 1, monthIndex, parseInt(day));
+    // Если дата в прошлом относительно базовой даты, берем следующий год
+    if (targetDate < baseDate) {
+      targetDate.setFullYear(year + 1);
     }
-
-    // Дополнительная проверка: если дата слишком далеко в будущем (более чем на 2 месяца),
-    // возможно это ошибка и нужно использовать предыдущий год
-    const diffMonths = (targetDate.getMonth() - baseDate.getMonth() + 12) % 12;
-    if (diffMonths > 2 && monthIndex < baseDate.getMonth()) {
-      targetDate = new Date(currentYear - 1, monthIndex, parseInt(day));
-    }
-
     return targetDate;
   }
   return baseDate;
@@ -582,11 +567,12 @@ document.addEventListener("DOMContentLoaded", function () {
 async function generateCalendarHTML(doctorId) {
   // Проверяем, какие даты являются прошедшими
   const today = new Date();
-  const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1);
+  const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+  const dayAfterTomorrow = new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000);
 
-  const dayAfterTomorrow = new Date(today);
-  dayAfterTomorrow.setDate(today.getDate() + 2);
+  const isTodayPast = isPastDate(today);
+  const isTomorrowPast = isPastDate(tomorrow);
+  const isDayAfterTomorrowPast = isPastDate(dayAfterTomorrow);
 
   // Проверяем недоступные даты
   const isTodayUnavailable = await isDateUnavailable(today, doctorId);
