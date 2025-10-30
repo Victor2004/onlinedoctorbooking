@@ -44,7 +44,7 @@ function formatDateForAPI(date) {
 }
 
 // Получение даты из текста (например: "15 янв.")
-function parseDateFromText(dateText) {
+function parseDateFromText(dateText, baseDate = new Date()) {
   const [day, monthText] = dateText.split(" ");
   const monthNames = [
     "янв.",
@@ -63,10 +63,31 @@ function parseDateFromText(dateText) {
   const monthIndex = monthNames.findIndex((name) => name === monthText);
 
   if (monthIndex !== -1) {
-    // Просто создаем дату с текущим годом
-    return new Date(new Date().getFullYear(), monthIndex, parseInt(day));
+    const currentYear = baseDate.getFullYear();
+
+    // Пробуем текущий год
+    let targetDate = new Date(currentYear, monthIndex, parseInt(day));
+    const baseDateWithoutTime = new Date(
+      currentYear,
+      baseDate.getMonth(),
+      baseDate.getDate()
+    );
+
+    // Если дата в прошлом, пробуем следующий год
+    if (targetDate < baseDateWithoutTime) {
+      targetDate = new Date(currentYear + 1, monthIndex, parseInt(day));
+    }
+
+    // Дополнительная проверка: если дата слишком далеко в будущем (более чем на 2 месяца),
+    // возможно это ошибка и нужно использовать предыдущий год
+    const diffMonths = (targetDate.getMonth() - baseDate.getMonth() + 12) % 12;
+    if (diffMonths > 2 && monthIndex < baseDate.getMonth()) {
+      targetDate = new Date(currentYear - 1, monthIndex, parseInt(day));
+    }
+
+    return targetDate;
   }
-  return new Date();
+  return baseDate;
 }
 
 let currentDoctorId = null;
