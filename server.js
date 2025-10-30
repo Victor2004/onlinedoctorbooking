@@ -1,8 +1,7 @@
-// server.js
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
-const database = require("./database"); // исправленный импорт
+const database = require("./database");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -51,8 +50,14 @@ app.get("/api/doctors", async (req, res) => {
 app.get("/api/availability/:doctorId/:date", async (req, res) => {
   try {
     const { doctorId, date } = req.params;
+
+    // ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА: Не является ли дата прошедшей
+    if (database.isPastDate(date)) {
+      return res.json({ bookedSlots: [], isPastDate: true });
+    }
+
     const bookedSlots = await database.getBookedSlots(parseInt(doctorId), date);
-    res.json({ bookedSlots });
+    res.json({ bookedSlots, isPastDate: false });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -62,11 +67,17 @@ app.get("/api/availability/:doctorId/:date", async (req, res) => {
 app.get("/api/date-unavailable/:doctorId/:date", async (req, res) => {
   try {
     const { doctorId, date } = req.params;
+
+    // ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА: Не является ли дата прошедшей
+    if (database.isPastDate(date)) {
+      return res.json({ isUnavailable: true, isPastDate: true });
+    }
+
     const isUnavailable = await database.isDateUnavailable(
       parseInt(doctorId),
       date
     );
-    res.json({ isUnavailable });
+    res.json({ isUnavailable, isPastDate: false });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -76,6 +87,20 @@ app.get("/api/date-unavailable/:doctorId/:date", async (req, res) => {
 app.post("/api/appointments", async (req, res) => {
   try {
     const bookingData = req.body;
+
+    // ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА: Не является ли дата и время прошедшими
+    if (database.isPastDateTime(bookingData.date, bookingData.time)) {
+      return res
+        .status(400)
+        .json({ error: "Нельзя записаться на прошедшее время" });
+    }
+
+    // ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА: Не является ли дата прошедшей
+    if (database.isPastDate(bookingData.date)) {
+      return res
+        .status(400)
+        .json({ error: "Нельзя записаться на прошедшую дату" });
+    }
 
     // Проверяем доступность
     const isAvailable = await database.isTimeSlotAvailable(

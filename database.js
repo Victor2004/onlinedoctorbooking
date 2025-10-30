@@ -1,4 +1,3 @@
-// database.js
 const sqlite3 = require("sqlite3").verbose();
 const { open } = require("sqlite");
 const path = require("path");
@@ -124,7 +123,12 @@ class Database {
   // Проверка доступности времени
   async isTimeSlotAvailable(doctorId, date, time) {
     try {
-      // Проверяем недоступные даты
+      // ПЕРВАЯ ПРОВЕРКА: Не является ли дата и время прошедшими
+      if (this.isPastDateTime(date, time)) {
+        return false;
+      }
+
+      // ВТОРАЯ ПРОВЕРКА: Проверяем недоступные даты
       const unavailable = await this.db.get(
         `
                 SELECT 1 FROM unavailable_dates 
@@ -137,7 +141,7 @@ class Database {
         return false;
       }
 
-      // Проверяем занятые слоты
+      // ТРЕТЬЯ ПРОВЕРКА: Проверяем занятые слоты
       const booked = await this.db.get(
         `
                 SELECT 1 FROM appointments 
@@ -153,7 +157,40 @@ class Database {
     }
   }
 
-  // В класс Database в database.js добавляем метод:
+  // НОВАЯ ФУНКЦИЯ: Проверка, является ли дата и время прошедшими
+  isPastDateTime(date, time) {
+    try {
+      const now = new Date();
+      const [hours, minutes] = time.split(":").map(Number);
+
+      // Создаем объект даты для проверяемого слота
+      const slotDate = new Date(date);
+      slotDate.setHours(hours, minutes, 0, 0);
+
+      // Сравниваем с текущим временем
+      return slotDate < now;
+    } catch (error) {
+      console.error("Error checking if datetime is past:", error);
+      return true; // В случае ошибки считаем слот недоступным
+    }
+  }
+
+  // НОВАЯ ФУНКЦИЯ: Проверка, является ли дата прошедшей
+  isPastDate(date) {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Сбрасываем время для сравнения только дат
+
+      const checkDate = new Date(date);
+      checkDate.setHours(0, 0, 0, 0);
+
+      return checkDate < today;
+    } catch (error) {
+      console.error("Error checking if date is past:", error);
+      return true;
+    }
+  }
+
   async isDateUnavailable(doctorId, date) {
     try {
       // Проверяем недоступные даты

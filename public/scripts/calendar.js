@@ -145,7 +145,8 @@ async function isDateUnavailable(date, doctorId) {
     }
 
     const data = await response.json();
-    return data.isUnavailable;
+    // Учитываем как недоступные даты, так и прошедшие
+    return data.isUnavailable || data.isPastDate;
   } catch (error) {
     console.error("Ошибка при проверке недоступных дат:", error);
     return false;
@@ -208,7 +209,6 @@ async function updateTimeSlots(selectedDate, doctorId, widgetElement) {
   timeGrid.innerHTML = "<p>Загрузка времени...</p>";
 
   try {
-    // Получаем занятые слоты с сервера
     const response = await fetch(
       `/api/availability/${doctorId}/${selectedDate}`
     );
@@ -221,6 +221,12 @@ async function updateTimeSlots(selectedDate, doctorId, widgetElement) {
     const bookedSlots = data.bookedSlots
       ? data.bookedSlots.map((slot) => slot.time)
       : [];
+
+    // ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА: Если дата прошедшая, показываем сообщение
+    if (data.isPastDate) {
+      timeGrid.innerHTML = "<p>Дата уже прошла</p>";
+      return;
+    }
 
     // Проверяем, является ли выбранная дата сегодняшним днем
     const today = new Date();
